@@ -127,15 +127,25 @@ TestIt('exceptions', {
       calls = [];
       results = TestIt('tests', {
         'before all': function(){ throw 'out'; },
+        'after all': function(){ calls.push('after all'); },
         'a test': function(){ calls.push('a test'); }
       });
     },
     'should be reported': function(t){
       report('error', TestIt.try(results,'tests','before all','result'));
       report('out', TestIt.try(results,'tests','before all','message'));
+      t.assertEqual('error', TestIt.try(results,'tests','before all','result'));
+      t.assertEqual('out', TestIt.try(results,'tests','before all','message'));
+    },
+    'should run the "after all"': function(t){
+      report(1, calls.length);
+      report('after all', calls[0]);
     },
     'should not run test': function(t){
-      report(0, calls.length);
+      report(1, calls.length);
+
+      t.assertEqual(1, calls.length);
+      t.assert(calls[0] !== 'a test');
     }
   },
   'in "before each"': {
@@ -143,16 +153,57 @@ TestIt('exceptions', {
       calls = [];
       results = TestIt('tests', {
         'before each': function(){ throw 'out'; },
+        'after each': function(){ calls.push('after each'); },
+        'after all': function(){ calls.push('after all'); },
         'a test': function(){ calls.push('a test'); }
       });
     },
     'should be reported': function(t){
       report('error', TestIt.try(results,'tests','a test','result'));
       report('out', TestIt.try(results,'tests','a test','message'));
+      t.assertEqual('error', TestIt.try(results,'tests','a test','result'));
+      t.assertEqual('out', TestIt.try(results,'tests','a test','message'));
+    },
+    'should run the "after each"': function(t){
+      report(2, calls.length);
+      report('after each', calls[0]);
+
+      t.assertEqual(2, calls.length);
+      t.assertEqual('after each', calls[0]);
+    },
+    'should run the "after all"': function(t){
+      report(2, calls.length);
+      report('after all', calls[1]);
+
+      t.assertEqual(2, calls.length);
+      t.assertEqual('after all', calls[1]);
     },
     'should not run test': function(t){
-      report(0, calls.length);
+      report(2, calls.length);
+
+      t.assertEqual(2, calls.length);
+      t.assert(calls[0] !== 'a test' && calls[1] !== 'a test');
     }
+  },
+  'in "after each"': {
+    'before all': function(t){
+      calls = [];
+      results = TestIt('tests', {
+        'after each': function(){ throw 'out'; },
+        'after all': function(){ calls.push('after all'); },
+        'a test': function(){ }
+      });
+    },
+    'should be reported': function(t){
+      report('error', TestIt.try(results,'tests','a test','result'));
+      report('out', TestIt.try(results,'tests','a test','message'));
+      t.assertEqual('error', TestIt.try(results,'tests','a test','result'));
+      t.assertEqual('out', TestIt.try(results,'tests','a test','message'));
+    },
+    'should run the "after all"': function(t){
+      report(1, calls.length);
+      report('after all', calls[0]);
+    },
   }
 });
 

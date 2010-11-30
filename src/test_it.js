@@ -6,6 +6,15 @@
     return results;
   };
 
+  var reportException = function(results, testName, exception){
+    if (exception.constructor === T.Assertions.Failure) {
+      results[testName].result = 'fail';
+      results[testName].message = exception.message;
+    } else {
+      results[testName].result = 'error';
+      results[testName].message = exception;
+    }
+  };
   T.Context = function(tests, contextBefore, contextAfter){
     var results = {};
     var before = (contextBefore || []).concat();
@@ -21,6 +30,7 @@
     try {
       beforeAll && beforeAll();
     } catch (e) {
+      afterAll && afterAll();
       return { 'before all': { result: 'error', message: e } };
     }
     for(var testName in tests){
@@ -31,15 +41,17 @@
           for(var i=0,b;b=before[i];i++){ b(); }
           test(new T.Assertions());
         } catch (e) {
-          if (e.constructor === T.Assertions.Failure) {
-            results[testName].result = 'fail';
-            results[testName].message = e.message;
-          } else {
-            results[testName].result = 'error';
-            results[testName].message = e;
+          reportException(results, testName, e);
+        }
+        for(var i=0,a;a=after[i];i++){
+          try {
+            a();
+          } catch (e) {
+            if (results[testName].result === undefined) {
+              reportException(results, testName, e);
+            }
           }
         }
-        for(var i=0,a;a=after[i];i++){ a(); }
         if (results[testName].result === undefined) {
           results[testName].result = 'pass';
         }
