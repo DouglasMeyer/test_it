@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    ol#test-results > li.passed { background-color: #E4FFE4; }
+    ol#test-results > li.failed { background-color: #FFE4E4; }
+  </style>
+  <script src="../src/test_it.js"></script>
+</head>
+<body>
+  <ol id="test-results">
+  </ol>
+  <script>
+var calls = [];
+TestIt('The Context', {
+  'before all':  function(){ calls.push('before all');  },
+  'before each': function(){ calls.push('before each'); },
+  'after all':   function(){ calls.push('after all');   },
+  'after each':  function(){ calls.push('after each');  },
+  'should work': function(){ calls.push('should work'); },
+  'context name': {
+    'before all':       function(){ calls.push('context before all');  },
+    'before each':      function(){ calls.push('context before each'); },
+    'after all':        function(){ calls.push('context after all');   },
+    'after each':       function(){ calls.push('context after each');  },
+    'should work':      function(){ calls.push('context should work'); },
+    'should also work': function(){ calls.push('context should also work'); }
+  },
+  'should also work': function(){ calls.push('should also work'); }
+}, function(){
+  calls.push('callback');
+});
+var expected = [];
+expected.push('before all');
+  expected.push('before each');
+  expected.push('should work');
+  expected.push('after each');
+
+  expected.push('context before all');
+    expected.push('before each');
+    expected.push('context before each');
+    expected.push('context should work');
+    expected.push('context after each');
+    expected.push('after each');
+
+    expected.push('before each');
+    expected.push('context before each');
+    expected.push('context should also work');
+    expected.push('context after each');
+    expected.push('after each');
+  expected.push('context after all');
+
+  expected.push('before each');
+  expected.push('should also work');
+  expected.push('after each');
+expected.push('after all');
+expected.push('callback');
+
+var results=document.getElementById('test-results');
+for(var i=0,e;e=expected[i];i++){
+  var element = document.createElement('li');
+  element.innerHTML = "Expected '"+e+"'";
+  if (e === calls[i]){
+    element.className = 'passed';
+  } else {
+    element.className = 'failed';
+    element.innerHTML += " but was '"+calls[i]+"'";
+  }
+  results.appendChild(element);
+}
+  </script>
+</body>
+</html>
