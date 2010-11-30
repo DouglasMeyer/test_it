@@ -12,63 +12,132 @@
   <ol id="test-results">
   </ol>
   <script>
-var calls = [];
-TestIt('The Context', {
-  'before all':  function(){ calls.push('before all');  },
-  'before each': function(){ calls.push('before each'); },
-  'after all':   function(){ calls.push('after all');   },
-  'after each':  function(){ calls.push('after each');  },
-  'should work': function(){ calls.push('should work'); },
-  'context name': {
-    'before all':       function(){ calls.push('context before all');  },
-    'before each':      function(){ calls.push('context before each'); },
-    'after all':        function(){ calls.push('context after all');   },
-    'after each':       function(){ calls.push('context after each');  },
-    'should work':      function(){ calls.push('context should work'); },
-    'should also work': function(){ calls.push('context should also work'); }
-  },
-  'should also work': function(){ calls.push('should also work'); }
-}, function(){
-  calls.push('callback');
-});
-var expected = [];
-expected.push('before all');
-  expected.push('before each');
-  expected.push('should work');
-  expected.push('after each');
+var results=document.getElementById('test-results'),
+    report = function(expected, actual){
+      var element = document.createElement('li');
+      element.innerHTML = "Expected '"+expected+"'";
+      if (expected === actual){
+        element.className = 'passed';
+      } else {
+        element.className = 'failed';
+        element.innerHTML += " but was '"+actual+"'";
+      }
+      results.appendChild(element);
+    };
 
-  expected.push('context before all');
-    expected.push('before each');
-    expected.push('context before each');
-    expected.push('context should work');
-    expected.push('context after each');
-    expected.push('after each');
+TestIt('before/after tests and contexts', {
+  'should be in order': function(t){
+    var calls = [];
+    TestIt('before/after tests and contexts', {
+      'before all':  function(){ calls.push('before all');  },
+      'before each': function(){ calls.push('before each'); },
+      'after all':   function(){ calls.push('after all');   },
+      'after each':  function(){ calls.push('after each');  },
+      'should work': function(){ calls.push('should work'); },
+      'context name': {
+        'before all':       function(){ calls.push('context before all');  },
+        'before each':      function(){ calls.push('context before each'); },
+        'after all':        function(){ calls.push('context after all');   },
+        'after each':       function(){ calls.push('context after each');  },
+        'should work':      function(){ calls.push('context should work'); },
+        'should also work': function(){ calls.push('context should also work'); }
+      },
+      'should also work': function(){ calls.push('should also work'); }
+    }, function(){
+      calls.push('callback');
+    });
+    var expected = [];
+    expected.push('before all');
+      expected.push('before each');
+      expected.push('should work');
+      expected.push('after each');
 
-    expected.push('before each');
-    expected.push('context before each');
-    expected.push('context should also work');
-    expected.push('context after each');
-    expected.push('after each');
-  expected.push('context after all');
+      expected.push('context before all');
+        expected.push('before each');
+        expected.push('context before each');
+        expected.push('context should work');
+        expected.push('context after each');
+        expected.push('after each');
 
-  expected.push('before each');
-  expected.push('should also work');
-  expected.push('after each');
-expected.push('after all');
-expected.push('callback');
+        expected.push('before each');
+        expected.push('context before each');
+        expected.push('context should also work');
+        expected.push('context after each');
+        expected.push('after each');
+      expected.push('context after all');
 
-var results=document.getElementById('test-results');
-for(var i=0,e;e=expected[i];i++){
-  var element = document.createElement('li');
-  element.innerHTML = "Expected '"+e+"'";
-  if (e === calls[i]){
-    element.className = 'passed';
-  } else {
-    element.className = 'failed';
-    element.innerHTML += " but was '"+calls[i]+"'";
+      expected.push('before each');
+      expected.push('should also work');
+      expected.push('after each');
+    expected.push('after all');
+    expected.push('callback');
+    t.assertEqual(expected, calls);
+    for(var i=0,e;e=expected[i];i++){
+      report(e, calls[i]);
+    }
   }
-  results.appendChild(element);
-}
+}, function(){});
+
+TestIt('assertions', {
+  'assert': {
+    'should not raise if passed true': function(t){
+      var raised = 'did not raise';
+      try {
+        t.assert(true);
+      } catch (e) {
+        raised = 'did raise';
+      }
+      report('did not raise', raised);
+    },
+    'should raise if passed false': function(t){
+      var raised = 'did not raise';
+      try {
+        t.assert(false);
+      } catch (e) {
+        raised = 'did raise';
+      }
+      report('did raise', raised);
+    },
+    'should raise with a TestIt.Assertions.Failure': function(t){
+      var exception;
+      try {
+        t.assert(false);
+      } catch (e) {
+        exception = e;
+      }
+      report(TestIt.Assertions.Failure, exception.constructor);
+    },
+    'should raise with a message': function(t){
+      var exception;
+      try {
+        t.assert(false, 'it should have been true');
+      } catch (e) {
+        exception = e;
+      }
+      report('it should have been true', exception.message);
+    }
+  },
+  'assertEqual': {
+    'should not raise when arrays are equal': function(t){
+      var raised = 'did not raise';
+      try {
+        t.assertEqual([1,2,3], [1,2,3]);
+      } catch (e) {
+        raised = 'did raise';
+      }
+      report('did not raise', raised);
+    },
+    'should raise when arrays are not equal': function(t){
+      var raised = 'did not raise';
+      try {
+        t.assertEqual([1,2,3], [1,3,2]);
+      } catch (e) {
+        raised = 'did raise';
+      }
+      report('did raise', raised);
+    }
+  }
+}, function(){});
   </script>
 </body>
 </html>
