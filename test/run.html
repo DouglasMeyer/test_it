@@ -5,6 +5,10 @@
   <style>
     ol#test-results > li.passed { background-color: #E4FFE4; }
     ol#test-results > li.failed { background-color: #FFE4E4; }
+
+    #test-it-results > .pass  { background-color: #E4FFE4; }
+    #test-it-results > .fail  { background-color: #FFB0B0; }
+    #test-it-results > .error { background-color: #FF4040; }
   </style>
   <script src="../src/test_it.js"></script>
 </head>
@@ -25,10 +29,11 @@ var testResults=document.getElementById('test-results'),
       testResults.appendChild(element);
     };
 
-var calls, results;
+var calls, results, log, origTestItReporterElementId = TestIt.Reporter.elementId;
 TestIt('before/after tests and contexts', {
   'before all': function(t){
     calls = [];
+    TestIt.Reporter.elementId = 'test-test-results';
     results = TestIt('the tests', {
       'before all':  function(){ calls.push('before all');  },
       'before each': function(){ calls.push('before each'); },
@@ -47,6 +52,11 @@ TestIt('before/after tests and contexts', {
       },
       'should also work': function(){ calls.push('should also work'); }
     });
+    log = document.getElementById(TestIt.Reporter.elementId);
+  },
+  'after all': function(){
+    log.parentElement.removeChild(log);
+    TestIt.Reporter.elementId = origTestItReporterElementId;
   },
   'should be in order': function(t){
     var expected = [];
@@ -125,11 +135,17 @@ TestIt('exceptions', {
   'in "before all"': {
     'before all': function(t){
       calls = [];
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'before all': function(){ throw 'out'; },
         'after all': function(){ calls.push('after all'); },
         'a test': function(){ calls.push('a test'); }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report('error', TestIt.try(results,'tests','before all','result'));
@@ -151,12 +167,18 @@ TestIt('exceptions', {
   'in "before each"': {
     'before all': function(t){
       calls = [];
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'before each': function(){ throw 'out'; },
         'after each': function(){ calls.push('after each'); },
         'after all': function(){ calls.push('after all'); },
         'a test': function(){ calls.push('a test'); }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report('error', TestIt.try(results,'tests','a test','result'));
@@ -188,11 +210,17 @@ TestIt('exceptions', {
   'in "after each"': {
     'before all': function(t){
       calls = [];
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'after each': function(){ throw 'out'; },
         'after all': function(){ calls.push('after all'); },
         'a test': function(){ }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report('error', TestIt.try(results,'tests','a test','result'));
@@ -210,10 +238,16 @@ TestIt('exceptions', {
 TestIt('running assertions', {
   'in "before all"': {
     'before all': function(){
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'before all': function(t){ t.assert(false); },
         'a test': function(){ }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report(1, TestIt.try(results,'tests','before all','assertions','length'));
@@ -222,10 +256,16 @@ TestIt('running assertions', {
   },
   'in "before each"': {
     'before all': function(){
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'before each': function(t){ t.assert(false); },
         'a test': function(){ }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report(1, TestIt.try(results,'tests','a test','assertions','length'));
@@ -234,10 +274,16 @@ TestIt('running assertions', {
   },
   'in "after each"': {
     'before all': function(){
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'after each': function(t){ t.assert(false); },
         'a test': function(){ }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report(1, TestIt.try(results,'tests','a test','assertions','length'));
@@ -246,10 +292,16 @@ TestIt('running assertions', {
   },
   'in "after all"': {
     'before all': function(){
+      TestIt.Reporter.elementId = 'test-test-results';
       results = TestIt('tests', {
         'after all': function(t){ t.assert(false); },
         'a test': function(){ }
       });
+      log = document.getElementById(TestIt.Reporter.elementId);
+    },
+    'after all': function(){
+      log.parentElement.removeChild(log);
+      TestIt.Reporter.elementId = origTestItReporterElementId;
     },
     'should be reported': function(t){
       report(1, TestIt.try(results,'tests','after all','assertions','length'));
@@ -319,7 +371,6 @@ TestIt('assertions', {
   }
 });
 
-var log, origTestItReporterElementId = TestIt.Reporter.elementId;
 TestIt('reporting', {
   'before all': function(){
     TestIt.Reporter.elementId = 'test-test-results';
@@ -331,7 +382,7 @@ TestIt('reporting', {
     log = document.getElementById(TestIt.Reporter.elementId);
   },
   'after all': function(){
-    log.remove();
+    log.parentElement.removeChild(log);
     TestIt.Reporter.elementId = origTestItReporterElementId;
   },
   'should create log off of TestIt.Reporter.elementId': function(t){
@@ -340,21 +391,21 @@ TestIt('reporting', {
   },
   'should report passing tests': function(t){
     report('tests: 1 test: pass', TestIt.try(log.childNodes[0],'textContent'));
-    report('pass', TestIt.try(log.childNodes[0],'classNames'));
+    report('pass', TestIt.try(log.childNodes[0],'className'));
     t.assertEqual('tests: 1 test: pass', TestIt.try(log.childNodes[0],'textContent'));
-    t.assertEqual('pass', TestIt.try(log.childNodes[0],'classNames'));
+    t.assertEqual('pass', TestIt.try(log.childNodes[0],'className'));
   },
   'should report failing tests': function(t){
     report('tests: 2 test: fail: fail message', TestIt.try(log.childNodes[1],'textContent'));
-    report('fail', TestIt.try(log.childNodes[1],'classNames'));
+    report('fail', TestIt.try(log.childNodes[1],'className'));
     t.assertEqual('tests: 2 test: fail: fail message', TestIt.try(log.childNodes[1],'textContent'));
-    t.assertEqual('fail', TestIt.try(log.childNodes[1],'classNames'));
+    t.assertEqual('fail', TestIt.try(log.childNodes[1],'className'));
   },
   'should report erroring tests': function(t){
     report('tests: 3 test: error: out', TestIt.try(log.childNodes[2],'textContent'));
-    report('error', TestIt.try(log.childNodes[2],'classNames'));
+    report('error', TestIt.try(log.childNodes[2],'className'));
     t.assertEqual('tests: 3 test: error: out', TestIt.try(log.childNodes[2],'textContent'));
-    t.assertEqual('error', TestIt.try(log.childNodes[2],'classNames'));
+    t.assertEqual('error', TestIt.try(log.childNodes[2],'className'));
   }
 });
   </script>

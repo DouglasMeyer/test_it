@@ -109,7 +109,7 @@
           html += ': '+result.message;
         }
         li.innerHTML = html;
-        li.classNames = result.result;
+        li.className = result.result;
         this.log.appendChild(li);
       } else {
         this.reportContext(result, contextName+name+': ');
