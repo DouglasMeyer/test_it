@@ -12,7 +12,7 @@
   <ol id="test-results">
   </ol>
   <script>
-var results=document.getElementById('test-results'),
+var testResults=document.getElementById('test-results'),
     report = function(expected, actual){
       var element = document.createElement('li');
       element.innerHTML = "Expected '"+expected+"'";
@@ -22,13 +22,14 @@ var results=document.getElementById('test-results'),
         element.className = 'failed';
         element.innerHTML += " but was '"+actual+"'";
       }
-      results.appendChild(element);
+      testResults.appendChild(element);
     };
 
+var calls, results;
 TestIt('before/after tests and contexts', {
-  'should be in order': function(t){
-    var calls = [];
-    TestIt('before/after tests and contexts', {
+  'before all': function(t){
+    calls = [];
+    results = TestIt('the tests', {
       'before all':  function(){ calls.push('before all');  },
       'before each': function(){ calls.push('before each'); },
       'after all':   function(){ calls.push('after all');   },
@@ -40,12 +41,14 @@ TestIt('before/after tests and contexts', {
         'after all':        function(){ calls.push('context after all');   },
         'after each':       function(){ calls.push('context after each');  },
         'should work':      function(){ calls.push('context should work'); },
-        'should also work': function(){ calls.push('context should also work'); }
+        'should also work': function(){ calls.push('context should also work'); },
+        'should not work':  function(t){ calls.push('context should not work'); t.assert(false, 'nope'); },
+        'should raise':     function(){ calls.push('context should raise'); throw 'ouch'; }
       },
       'should also work': function(){ calls.push('should also work'); }
-    }, function(){
-      calls.push('callback');
     });
+  },
+  'should be in order': function(t){
     var expected = [];
     expected.push('before all');
       expected.push('before each');
@@ -64,19 +67,59 @@ TestIt('before/after tests and contexts', {
         expected.push('context should also work');
         expected.push('context after each');
         expected.push('after each');
+
+        expected.push('before each');
+        expected.push('context before each');
+        expected.push('context should not work');
+        expected.push('context after each');
+        expected.push('after each');
+
+        expected.push('before each');
+        expected.push('context before each');
+        expected.push('context should raise');
+        expected.push('context after each');
+        expected.push('after each');
       expected.push('context after all');
 
       expected.push('before each');
       expected.push('should also work');
       expected.push('after each');
     expected.push('after all');
-    expected.push('callback');
-    t.assertEqual(expected, calls);
     for(var i=0,e;e=expected[i];i++){
       report(e, calls[i]);
     }
+    t.assertEqual(expected, calls);
+  },
+  'should return results': function(t){
+    var keys;
+
+    keys = [];
+    for (var key in results) { keys.push(key); }
+    report(1, keys.length);
+    report('the tests', keys[0]);
+
+    keys = [];
+    for (var key in TestIt.try(results,'the tests')) { keys.push(key); }
+    report(3, keys.length);
+    report('should work', keys[0]);
+    report('context name', keys[1]);
+    report('should also work', keys[2]);
+
+    report('pass',  TestIt.try(results,'the tests','should work','result'));
+    report('pass',  TestIt.try(results,'the tests','context name','should work','result'));
+    report('fail',  TestIt.try(results,'the tests','context name','should not work','result'));
+    report('nope',  TestIt.try(results,'the tests','context name','should not work','message'));
+    report('error', TestIt.try(results,'the tests','context name','should raise','result'));
+    report('ouch',  TestIt.try(results,'the tests','context name','should raise','message'));
+
+    t.assertEqual('pass',  TestIt.try(results,'the tests','should work','result'));
+    t.assertEqual('pass',  TestIt.try(results,'the tests','context name','should work','result'));
+    t.assertEqual('fail',  TestIt.try(results,'the tests','context name','should not work','result'));
+    t.assertEqual('nope',  TestIt.try(results,'the tests','context name','should not work','message'));
+    t.assertEqual('error', TestIt.try(results,'the tests','context name','should raise','result'));
+    t.assertEqual('ouch',  TestIt.try(results,'the tests','context name','should raise','message'));
   }
-}, function(){});
+});
 
 TestIt('assertions', {
   'assert': {
@@ -137,7 +180,7 @@ TestIt('assertions', {
       report('did raise', raised);
     }
   }
-}, function(){});
+});
   </script>
 </body>
 </html>

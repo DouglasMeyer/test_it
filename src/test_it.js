@@ -1,11 +1,13 @@
 (function(global){
 
-  var T = global.TestIt = function(name, tests, callback){
-    new T.Context(tests);
-    callback();
+  var T = global.TestIt = function(name, tests){
+    var results = {};
+    results[name] = new T.Context(tests);
+    return results;
   };
 
   T.Context = function(tests, contextBefore, contextAfter){
+    var results = {};
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
     var beforeAll  = tests['before all'],
@@ -20,16 +22,32 @@
     for(var testName in tests){
       var test = tests[testName];
       if (typeof(test) === 'function') {
+        results[testName] = {};
         for(var i=0,b;b=before[i];i++){ b(); }
-        test(new T.Assertions());
-        for(var i=0,a;a=after[i ];i++){ a(); }
+        try {
+          test(new T.Assertions());
+        } catch (e) {
+          if (e.constructor === T.Assertions.Failure) {
+            results[testName].result = 'fail';
+            results[testName].message = e.message;
+          } else {
+            results[testName].result = 'error';
+            results[testName].message = e;
+          }
+        }
+        for(var i=0,a;a=after[i];i++){ a(); }
+        if (results[testName].result === undefined) {
+          results[testName].result = 'pass';
+        }
       } else {
-        new T.Context(test, before, after);
+        results[testName] = new T.Context(test, before, after);
       }
     }
     afterAll && afterAll();
+    return results;
   };
 
+// Assertions
   T.Assertions = function(){ };
   T.Assertions.prototype.assert = function(assertion, message){
     if (!assertion) { throw new T.Assertions.Failure(message); }
@@ -38,6 +56,8 @@
     if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message); }
   };
   T.Assertions.Failure = function(message){ this.message = message; };
+
+// Helpers
   T.isEqual = function(expected, actual){
     if (Array === expected.constructor) {
       if (expected.length !== actual.length) { return false; }
@@ -46,6 +66,14 @@
     } else {
       return expected === actual;
     }
+  };
+  T.try = function(){
+    var i=1,e=arguments[0];
+    while (e && arguments[i]) {
+      e = e[arguments[i]];
+      i = i + 1;
+    }
+    return e;
   };
 
 })(window);
