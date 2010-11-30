@@ -318,6 +318,45 @@ TestIt('assertions', {
     }
   }
 });
+
+var log, origTestItReporterElementId = TestIt.Reporter.elementId;
+TestIt('reporting', {
+  'before all': function(){
+    TestIt.Reporter.elementId = 'test-test-results';
+    TestIt('tests', {
+      '1 test': function(t){ t.assert(true); },
+      '2 test': function(t){ t.assert(false, 'fail message'); },
+      '3 test': function(t){ throw 'out'; }
+    });
+    log = document.getElementById(TestIt.Reporter.elementId);
+  },
+  'after all': function(){
+    log.remove();
+    TestIt.Reporter.elementId = origTestItReporterElementId;
+  },
+  'should create log off of TestIt.Reporter.elementId': function(t){
+    report(TestIt.Reporter.elementId, log && log.id);
+    t.assert(document.getElementById(TestIt.Reporter.elementId));
+  },
+  'should report passing tests': function(t){
+    report('tests: 1 test: pass', TestIt.try(log.childNodes[0],'textContent'));
+    report('pass', TestIt.try(log.childNodes[0],'classNames'));
+    t.assertEqual('tests: 1 test: pass', TestIt.try(log.childNodes[0],'textContent'));
+    t.assertEqual('pass', TestIt.try(log.childNodes[0],'classNames'));
+  },
+  'should report failing tests': function(t){
+    report('tests: 2 test: fail: fail message', TestIt.try(log.childNodes[1],'textContent'));
+    report('fail', TestIt.try(log.childNodes[1],'classNames'));
+    t.assertEqual('tests: 2 test: fail: fail message', TestIt.try(log.childNodes[1],'textContent'));
+    t.assertEqual('fail', TestIt.try(log.childNodes[1],'classNames'));
+  },
+  'should report erroring tests': function(t){
+    report('tests: 3 test: error: out', TestIt.try(log.childNodes[2],'textContent'));
+    report('error', TestIt.try(log.childNodes[2],'classNames'));
+    t.assertEqual('tests: 3 test: error: out', TestIt.try(log.childNodes[2],'textContent'));
+    t.assertEqual('error', TestIt.try(log.childNodes[2],'classNames'));
+  }
+});
   </script>
 </body>
 </html>

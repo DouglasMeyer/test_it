@@ -3,6 +3,7 @@
   var T = global.TestIt = function(name, tests){
     var results = {};
     results[name] = new T.Context(tests);
+    new T.Reporter(results);
     return results;
   };
 
@@ -84,6 +85,37 @@
     if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message); }
   };
   T.Assertions.Failure = function(message){ this.message = message; };
+
+// Reporter
+  T.Reporter = function(results){
+    this.log = document.getElementById(T.Reporter.elementId);
+    if (this.log === null){
+      this.log = document.createElement('ul');
+      this.log.id = T.Reporter.elementId;
+      //log.style = "position:absolute;top:0;left:0;";
+      document.body.appendChild(this.log);
+    }
+    this.reportContext(results);
+  };
+  T.Reporter.elementId = 'test-it-results';
+  T.Reporter.prototype.reportContext = function(results, contextName){
+    contextName = contextName || '';
+    for(var name in results){
+      var result = results[name];
+      if(result.assertions) {
+        var li = document.createElement('li'),
+            html = contextName+name+': '+result.result;
+        if (result.result !== 'pass' && result.message) {
+          html += ': '+result.message;
+        }
+        li.innerHTML = html;
+        li.classNames = result.result;
+        this.log.appendChild(li);
+      } else {
+        this.reportContext(result, contextName+name+': ');
+      }
+    }
+  };
 
 // Helpers
   T.isEqual = function(expected, actual){
