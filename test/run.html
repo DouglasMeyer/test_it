@@ -121,6 +121,41 @@ TestIt('before/after tests and contexts', {
   }
 });
 
+TestIt('exceptions', {
+  'in "before all"': {
+    'before all': function(t){
+      calls = [];
+      results = TestIt('tests', {
+        'before all': function(){ throw 'out'; },
+        'a test': function(){ calls.push('a test'); }
+      });
+    },
+    'should be reported': function(t){
+      report('error', TestIt.try(results,'tests','before all','result'));
+      report('out', TestIt.try(results,'tests','before all','message'));
+    },
+    'should not run test': function(t){
+      report(0, calls.length);
+    }
+  },
+  'in "before each"': {
+    'before all': function(t){
+      calls = [];
+      results = TestIt('tests', {
+        'before each': function(){ throw 'out'; },
+        'a test': function(){ calls.push('a test'); }
+      });
+    },
+    'should be reported': function(t){
+      report('error', TestIt.try(results,'tests','a test','result'));
+      report('out', TestIt.try(results,'tests','a test','message'));
+    },
+    'should not run test': function(t){
+      report(0, calls.length);
+    }
+  }
+});
+
 TestIt('assertions', {
   'assert': {
     'should not raise if passed true': function(t){

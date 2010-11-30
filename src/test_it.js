@@ -18,13 +18,17 @@
     delete(tests['before each']);
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
-    beforeAll && beforeAll();
+    try {
+      beforeAll && beforeAll();
+    } catch (e) {
+      return { 'before all': { result: 'error', message: e } };
+    }
     for(var testName in tests){
       var test = tests[testName];
       if (typeof(test) === 'function') {
         results[testName] = {};
-        for(var i=0,b;b=before[i];i++){ b(); }
         try {
+          for(var i=0,b;b=before[i];i++){ b(); }
           test(new T.Assertions());
         } catch (e) {
           if (e.constructor === T.Assertions.Failure) {
