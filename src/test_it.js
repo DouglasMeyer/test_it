@@ -16,7 +16,7 @@
     }
   };
   T.Context = function(tests, contextBefore, contextAfter){
-    var results = {};
+    var results = {}, assertions = new T.Assertions();
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
     var beforeAll  = tests['before all'],
@@ -28,18 +28,21 @@
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
     try {
-      beforeAll && beforeAll();
+      beforeAll && beforeAll(assertions);
     } catch (e) {
+      results['before all'] = { assertions: assertions };
+      reportException(results, 'before all', e);
       afterAll && afterAll();
-      return { 'before all': { result: 'error', message: e } };
+      return results;
     }
     for(var testName in tests){
       var test = tests[testName];
       if (typeof(test) === 'function') {
-        results[testName] = {};
+        results[testName] = { };
+        assertions = results[testName].assertions = new T.Assertions();
         try {
-          for(var i=0,b;b=before[i];i++){ b(); }
-          test(new T.Assertions());
+          for(var i=0,b;b=before[i];i++){ b(assertions); }
+          test(assertions);
         } catch (e) {
           reportException(results, testName, e);
         }
@@ -64,11 +67,13 @@
   };
 
 // Assertions
-  T.Assertions = function(){ };
+  T.Assertions = function(){ this.length = 0; };
   T.Assertions.prototype.assert = function(assertion, message){
+    this.length = this.length + 1;
     if (!assertion) { throw new T.Assertions.Failure(message); }
   };
   T.Assertions.prototype.assertEqual = function(expected, actual, message){
+    this.length = this.length + 1;
     if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message); }
   };
   T.Assertions.Failure = function(message){ this.message = message; };

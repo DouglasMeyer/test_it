@@ -207,6 +207,33 @@ TestIt('exceptions', {
   }
 });
 
+TestIt('running assertions', {
+  'in "before all"': {
+    'before all': function(){
+      results = TestIt('tests', {
+        'before all': function(t){ t.assert(false); },
+        'a test': function(){ }
+      });
+    },
+    'should be reported': function(t){
+      report(1, TestIt.try(results,'tests','before all','assertions','length'));
+      t.assertEqual(1, TestIt.try(results,'tests','before all','assertions','length'));
+    }
+  },
+  'in "before each"': {
+    'before all': function(){
+      results = TestIt('tests', {
+        'before each': function(t){ t.assert(false); },
+        'a test': function(){ }
+      });
+    },
+    'should be reported': function(t){
+      report(1, TestIt.try(results,'tests','a test','assertions','length'));
+      t.assertEqual(1, TestIt.try(results,'tests','a test','assertions','length'));
+    }
+  }
+});
+
 TestIt('assertions', {
   'assert': {
     'should not raise if passed true': function(t){
