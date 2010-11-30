@@ -16,7 +16,7 @@
     }
   };
   T.Context = function(tests, contextBefore, contextAfter){
-    var results = {}, assertions = new T.Assertions();
+    var results = {}, assertions;
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
     var beforeAll  = tests['before all'],
@@ -28,6 +28,7 @@
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
     try {
+      assertions = new TestIt.Assertions();
       beforeAll && beforeAll(assertions);
     } catch (e) {
       results['before all'] = { assertions: assertions };
@@ -48,7 +49,7 @@
         }
         for(var i=0,a;a=after[i];i++){
           try {
-            a();
+            a(assertions);
           } catch (e) {
             if (results[testName].result === undefined) {
               reportException(results, testName, e);
@@ -62,7 +63,13 @@
         results[testName] = new T.Context(test, before, after);
       }
     }
-    afterAll && afterAll();
+    try {
+      assertions = new TestIt.Assertions();
+      afterAll && afterAll(assertions);
+    } catch (e) {
+      results['after all'] = { assertions: assertions };
+      reportException(results, 'after all', e);
+    }
     return results;
   };
 

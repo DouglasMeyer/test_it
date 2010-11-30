@@ -231,6 +231,30 @@ TestIt('running assertions', {
       report(1, TestIt.try(results,'tests','a test','assertions','length'));
       t.assertEqual(1, TestIt.try(results,'tests','a test','assertions','length'));
     }
+  },
+  'in "after each"': {
+    'before all': function(){
+      results = TestIt('tests', {
+        'after each': function(t){ t.assert(false); },
+        'a test': function(){ }
+      });
+    },
+    'should be reported': function(t){
+      report(1, TestIt.try(results,'tests','a test','assertions','length'));
+      t.assertEqual(1, TestIt.try(results,'tests','a test','assertions','length'));
+    }
+  },
+  'in "after all"': {
+    'before all': function(){
+      results = TestIt('tests', {
+        'after all': function(t){ t.assert(false); },
+        'a test': function(){ }
+      });
+    },
+    'should be reported': function(t){
+      report(1, TestIt.try(results,'tests','after all','assertions','length'));
+      t.assertEqual(1, TestIt.try(results,'tests','after all','assertions','length'));
+    }
   }
 });
 
