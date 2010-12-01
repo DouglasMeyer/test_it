@@ -1,9 +1,10 @@
 (function(global){
 
-  var T = global.TestIt = function(name, tests){
+  var T = global.TestIt = function(name, tests, reporter){
+    reporter = reporter || T.Reporter;
     var results = {};
     results[name] = new T.Context(tests);
-    new T.Reporter(results);
+    new reporter(results);
     return results;
   };
 
