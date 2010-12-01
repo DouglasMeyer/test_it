@@ -86,15 +86,11 @@ TestIt('before/after tests and contexts', {
 
     keys = [];
     for (var key in results) { keys.push(key); }
-    t.assertEqual(1, keys.length);
-    t.assertEqual('the tests', keys[0]);
+    t.assertEqual(['the tests'], keys);
 
     keys = [];
     for (var key in TestIt.try(results,'the tests')) { keys.push(key); }
-    t.assertEqual(3, keys.length);
-    t.assertEqual('should work', keys[0]);
-    t.assertEqual('context name', keys[1]);
-    t.assertEqual('should also work', keys[2]);
+    t.assertEqual(['should work', 'context name', 'should also work'], keys);
 
     t.assertEqual('pass',  TestIt.try(results,'the tests','should work','result'));
     t.assertEqual('pass',  TestIt.try(results,'the tests','context name','should work','result'));
@@ -292,15 +288,15 @@ TestIt('reporting', {
     }, fakeTestItReporter);
   },
   'should report passing tests': function(t){
-    t.assertEqual('tests: 1 test: pass', TestIt.try(log[0],'textContent'));
+    t.assertEqual('tests: 1 test: pass (1 assertion run)', TestIt.try(log[0],'textContent'));
     t.assertEqual('pass', TestIt.try(log[0],'className'));
   },
   'should report failing tests': function(t){
-    t.assertEqual('tests: 2 test: fail: fail message', TestIt.try(log[1],'textContent'));
+    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', TestIt.try(log[1],'textContent'));
     t.assertEqual('fail', TestIt.try(log[1],'className'));
   },
   'should report erroring tests': function(t){
-    t.assertEqual('tests: 3 test: error: out', TestIt.try(log[2],'textContent'));
+    t.assertEqual('tests: 3 test: error: out (0 assertions run)', TestIt.try(log[2],'textContent'));
     t.assertEqual('error', TestIt.try(log[2],'className'));
   }
 });

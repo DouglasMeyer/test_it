@@ -8,13 +8,13 @@
     return results;
   };
 
-  var reportException = function(results, testName, exception){
+  var reportException = function(result, exception){
     if (exception.constructor === T.Assertions.Failure) {
-      results[testName].result = 'fail';
-      results[testName].message = exception.message;
+      result.result = 'fail';
+      result.message = exception.message;
     } else {
-      results[testName].result = 'error';
-      results[testName].message = exception;
+      result.result = 'error';
+      result.message = exception;
     }
   };
   T.Context = function(tests, contextBefore, contextAfter){
@@ -34,33 +34,14 @@
       beforeAll && beforeAll(assertions);
     } catch (e) {
       results['before all'] = { assertions: assertions };
-      reportException(results, 'before all', e);
-      afterAll && afterAll();
+      reportException(results['before all'], e);
+      afterAll && afterAll(); // FIXME: pass this the assertions.
       return results;
     }
     for(var testName in tests){
       var test = tests[testName];
       if (typeof(test) === 'function') {
-        results[testName] = { };
-        assertions = results[testName].assertions = new T.Assertions();
-        try {
-          for(var i=0,b;b=before[i];i++){ b(assertions); }
-          test(assertions);
-        } catch (e) {
-          reportException(results, testName, e);
-        }
-        for(var i=0,a;a=after[i];i++){
-          try {
-            a(assertions);
-          } catch (e) {
-            if (results[testName].result === undefined) {
-              reportException(results, testName, e);
-            }
-          }
-        }
-        if (results[testName].result === undefined) {
-          results[testName].result = 'pass';
-        }
+        results[testName] = new T.Runner(before, test, after);
       } else {
         results[testName] = new T.Context(test, before, after);
       }
@@ -70,9 +51,32 @@
       afterAll && afterAll(assertions);
     } catch (e) {
       results['after all'] = { assertions: assertions };
-      reportException(results, 'after all', e);
+      reportException(results['after all'], e);
     }
     return results;
+  };
+
+// Runner
+  T.Runner = function(before, test, after){
+    this.assertions = new T.Assertions();
+    try {
+      for(var i=0,b;b=before[i];i++){ b(this.assertions); }
+      test(this.assertions);
+    } catch (e) {
+      reportException(this, e);
+    }
+    for(var i=0,a;a=after[i];i++){
+      try {
+        a(this.assertions);
+      } catch (e) {
+        if (this.result === undefined) {
+          reportException(this, e);
+        }
+      }
+    }
+    if (this.result === undefined) {
+      this.result = 'pass';
+    }
   };
 
 // Assertions
@@ -109,6 +113,7 @@
         if (result.result !== 'pass' && result.message) {
           html += ': '+result.message;
         }
+        html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
         li.innerHTML = html;
         li.className = result.result;
         this.log.appendChild(li);
