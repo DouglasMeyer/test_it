@@ -247,6 +247,15 @@ TestIt('assertions', {
       }
       t.assertEqual(TestIt.Assertions.Failure, exception.constructor);
     },
+    'should raise with a default message': function(t){
+      var exception;
+      try {
+        t.assert(false);
+      } catch (e) {
+        exception = e;
+      }
+      t.assertEqual('false is not true', exception.message);
+    },
     'should raise with a message': function(t){
       var exception;
       try {
@@ -275,7 +284,16 @@ TestIt('assertions', {
         raised = 'did raise';
       }
       t.assertEqual('did raise', raised);
-    }
+    },
+    'should raise with a default message': function(t){
+      var exception;
+      try {
+        t.assertEqual([1,2,3], [3,2,1]);
+      } catch (e) {
+        exception = e;
+      }
+      t.assertEqual('expected 1,2,3 but was 3,2,1', exception.message);
+    },
   }
 });
 

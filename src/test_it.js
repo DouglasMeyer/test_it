@@ -83,11 +83,11 @@
   T.Assertions = function(){ this.length = 0; };
   T.Assertions.prototype.assert = function(assertion, message){
     this.length = this.length + 1;
-    if (!assertion) { throw new T.Assertions.Failure(message); }
+    if (!assertion) { throw new T.Assertions.Failure(message || assertion+" is not true"); }
   };
   T.Assertions.prototype.assertEqual = function(expected, actual, message){
     this.length = this.length + 1;
-    if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message); }
+    if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message || "expected "+expected+" but was "+actual); }
   };
   T.Assertions.Failure = function(message){ this.message = message; };
 
