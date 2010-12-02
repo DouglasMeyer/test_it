@@ -318,6 +318,29 @@ TestIt('reporting', {
     t.assertEqual('error', TestIt.try(log[2],'className'));
   }
 });
+
+(function(){
+var inspectTests = function(input){
+  var tests = {};
+  while(input.length >= 3){
+    (function(){
+      var subject = input.shift(),
+          outcome = input.shift(),
+          description = input.shift();
+      tests[description+" '"+subject+"' should yield '"+outcome+"'"] = function(t){
+        t.assertEqual(outcome, TestIt.inspect(subject));
+      }
+    })();
+  }
+  return tests;
+};
+TestIt('TestIt.inspect', inspectTests([
+  1, '1', 'Integer',
+  '1', '"1"', 'String',
+  [1,2,3], '[1,2,3]', 'Array',
+  ['a','b'], '["a","b"]', 'Array of Strings'
+]));
+})();
   </script>
 </body>
 </html>

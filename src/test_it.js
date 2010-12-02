@@ -141,5 +141,19 @@
     }
     return e;
   };
+  T.inspect = function(subject){
+    switch(subject.constructor){
+    case String: return '"'+subject+'"';
+    case Array:
+      var output='[', first=true;
+      for(var e in subject){
+        if (!first){ output += ','; }
+        output += T.inspect(subject[e]);
+        first = false;
+      }
+      return output+']';
+    }
+    return subject.toString();
+  };
 
 })(window);
