@@ -87,7 +87,7 @@
   };
   T.Assertions.prototype.assertEqual = function(expected, actual, message){
     this.length = this.length + 1;
-    if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message || "expected "+expected+" but was "+actual); }
+    if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message || "expected "+T.inspect(expected)+" but was "+T.inspect(actual)); }
   };
   T.Assertions.Failure = function(message){ this.message = message; };
 
