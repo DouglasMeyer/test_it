@@ -29,58 +29,108 @@
     delete(tests['before each']);
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
-    try {
-      assertions = new TestIt.Assertions();
-      beforeAll && beforeAll(assertions);
-    } catch (e) {
-      results['before all'] = { assertions: assertions };
-      reportException(results['before all'], e);
-      afterAll && afterAll(); // FIXME: pass this the assertions.
-      return results;
-    }
-    for(var testName in tests){
-      var test = tests[testName];
-      if (typeof(test) === 'function') {
-        results[testName] = new T.Runner(before, test, after);
-      } else {
-        results[testName] = new T.Context(test, before, after);
+    if (beforeAll){
+      try {
+        results['before all'] = { };
+        assertions = new T.Assertions(results['before all']);
+        beforeAll(assertions);
+        delete results['before all'];
+      } catch (e) {
+        results['before all'].assertions = assertions;
+        reportException(results['before all'], e);
+        afterAll && afterAll(assertions);
+        return results;
       }
     }
-    try {
-      assertions = new TestIt.Assertions();
-      afterAll && afterAll(assertions);
-    } catch (e) {
-      results['after all'] = { assertions: assertions };
-      reportException(results['after all'], e);
-    }
+    T.waitFor(function(){
+      return assertions === undefined || assertions.waitForCount === 0;
+    }, function(){
+      for(var testName in tests){
+        var test = tests[testName];
+        if (typeof(test) === 'function') {
+          results[testName] = new T.Runner(before, test, after);
+        } else {
+          results[testName] = new T.Context(test, before, after);
+        }
+      }
+      if (afterAll) {
+        T.waitFor(function(){
+          for(var name in results){
+            if (results[name].running === true){ return false; }
+          }
+          return true;
+        }, function(){
+          try {
+            results['after all'] = { };
+            assertions = new T.Assertions(results['after all']);
+            afterAll(assertions);
+            delete results['after all'];
+          } catch (e) {
+            results['after all'].assertions = assertions;
+            reportException(results['after all'], e);
+          }
+        });
+      }
+    });
     return results;
   };
 
 // Runner
   T.Runner = function(before, test, after){
-    this.assertions = new T.Assertions();
+    var runner = this;
+    this.running = true;
+    this.assertions = new T.Assertions(this);
     try {
       for(var i=0,b;b=before[i];i++){ b(this.assertions); }
-      test(this.assertions);
     } catch (e) {
       reportException(this, e);
     }
-    for(var i=0,a;a=after[i];i++){
-      try {
-        a(this.assertions);
-      } catch (e) {
-        if (this.result === undefined) {
-          reportException(this, e);
+    T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
+      if (runner.result === undefined) {
+        try {
+          test(runner.assertions);
+        } catch (e) {
+          reportException(runner, e);
         }
       }
-    }
-    if (this.result === undefined) {
-      this.result = 'pass';
-    }
+      T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
+        for(var i=0,a;a=after[i];i++){
+          try {
+            a(runner.assertions);
+          } catch (e) {
+            if (runner.result === undefined) {
+              reportException(runner, e);
+            }
+          }
+        }
+        T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
+          if (runner.result === undefined) {
+            runner.result = 'pass';
+          }
+          runner.running = false;
+        });
+      });
+    });
   };
 
 // Assertions
-  T.Assertions = function(){ this.length = 0; };
+  T.Assertions = function(result){
+    this.result = result;
+    this.length = 0;
+    this.waitForCount = 0;
+  };
+  T.Assertions.prototype.waitFor = function(condition, callback){
+    var assertion = this;
+    this.waitForCount += 1;
+    T.waitFor(condition, function(){
+      try {
+        callback();
+      } catch(e) {
+        reportException(assertion.result, e);
+      }
+      assertion.waitForCount -= 1;
+    });
+  };
   T.Assertions.prototype.assert = function(assertion, message){
     this.length = this.length + 1;
     if (!assertion) { throw new T.Assertions.Failure(message || assertion+" is not true"); }
@@ -97,7 +147,6 @@
     if (this.log === null){
       this.log = document.createElement('ul');
       this.log.id = T.Reporter.elementId;
-      //log.style = "position:absolute;top:0;left:0;";
       document.body.appendChild(this.log);
     }
     this.reportContext(results);
@@ -105,20 +154,28 @@
   T.Reporter.elementId = 'test-it-results';
   T.Reporter.prototype.reportContext = function(results, contextName){
     contextName = contextName || '';
+    var reporter = this;
     for(var name in results){
-      var result = results[name];
-      if(result.assertions) {
-        var li = document.createElement('li'),
-            html = contextName+name+': '+result.result;
-        if (result.result !== 'pass' && result.message) {
-          html += ': '+result.message;
-        }
-        html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-        li.innerHTML = html;
-        li.className = result.result;
-        this.log.appendChild(li);
+      if(results[name].assertions) {
+        (function(){
+          var result = results[name],
+              li = document.createElement('li'),
+              html = contextName+name+': ';
+          li.innerHTML = html + 'running...';
+          li.className = 'running';
+          reporter.log.appendChild(li);
+          T.waitFor(function(){ return result.running === false; }, function(){
+            html += result.result;
+            if (result.result !== 'pass' && result.message) {
+              html += ': '+result.message;
+            }
+            html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
+            li.innerHTML = html;
+            li.className = result.result;
+          });
+        })();
       } else {
-        this.reportContext(result, contextName+name+': ');
+        this.reportContext(results[name], contextName+name+': ');
       }
     }
   };
@@ -142,6 +199,7 @@
     return e;
   };
   T.inspect = function(subject){
+    if (subject === undefined) { return 'undefined'; }
     switch(subject.constructor){
     case String: return '"'+subject+'"';
     case Array:
@@ -154,6 +212,18 @@
       return output+']';
     }
     return subject.toString();
+  };
+  T.waitFor = function(condition, callback){
+    if (condition()){
+      callback();
+    } else {
+      var interval = setInterval(function(){
+        if (condition()){
+          clearInterval(interval);
+          callback();
+        }
+      }, 100);
+    }
   };
 
 })(window);

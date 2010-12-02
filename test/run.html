@@ -5,6 +5,7 @@
   <style>
     #test-it-results { list-style-type: none; margin: 0; padding: 0; }
     #test-it-results > li { margin: 2px 0 0 0; padding: 1px; }
+    #test-it-results > .running { background-color: #AAAAAA; }
     #test-it-results > .pass  { background-color: #E4FFE4; }
     #test-it-results > .fail  { background-color: #FFB0B0; }
     #test-it-results > .error { background-color: #FF4040; }
@@ -338,8 +339,92 @@ TestIt('TestIt.inspect', inspectTests([
   1, '1', 'Integer',
   '1', '"1"', 'String',
   [1,2,3], '[1,2,3]', 'Array',
-  ['a','b'], '["a","b"]', 'Array of Strings'
+  ['a','b'], '["a","b"]', 'Array of Strings',
+  undefined, 'undefined', 'Undefined'
 ]));
+})();
+
+window.waitForCallbackCalled = false;
+var start = new Date();
+TestIt.waitFor(function(){
+  return (new Date()) - start > 500;
+}, function(){
+  window.waitForCallbackCalled = true;
+});
+setTimeout(function(){
+  TestIt('waitFor', {
+    'should have waited for condition, then ran callback': function(t){
+      t.assert(window.waitForCallbackCalled);
+    }
+  });
+}, 1000);
+
+(function(){
+var calls;
+TestIt('waitFor', {
+  'before all': function(){
+    calls = [];
+    var counter = 0;
+    TestIt('tests', {
+      'before all': function(t){
+        var name = 'before all';
+        calls.push(name);
+        t.waitFor(function(){
+          return counter++ > 10;
+        }, function(){
+          calls.push(name+' callback');
+        });
+      }, 'before each': function(t){
+        var name = 'before each';
+        calls.push(name);
+        t.waitFor(function(){
+          return counter++ > 20;
+        }, function(){
+          calls.push(name+' callback');
+        });
+      }, 'test': function(t){
+        var name = 'test';
+        calls.push(name);
+        t.waitFor(function(){
+          return counter++ > 30;
+        }, function(){
+          calls.push(name+' callback');
+        });
+      }, 'after each': function(t){
+        var name = 'after each';
+        calls.push(name);
+        t.waitFor(function(){
+          return counter++ > 40;
+        }, function(){
+          calls.push(name+' callback');
+        });
+      }, 'after all': function(t){
+        var name = 'after all';
+        calls.push(name);
+        t.waitFor(function(){
+          return counter++ > 50;
+        }, function(){
+          calls.push(name+' callback');
+        });
+      }
+    }, fakeTestItReporter);
+  },
+  'should delay each call until the callbacks are called': function(t){
+    var start = new Date();
+    t.waitFor(function(){
+      return (new Date()) - start > (50+25)*100;
+    }, function(){
+      var expected = [
+        'before all', 'before all callback',
+        'before each', 'before each callback',
+        'test', 'test callback',
+        'after each', 'after each callback',
+        'after all', 'after all callback'
+      ];
+      t.assertEqual(expected, calls);
+    });
+  }
+});
 })();
   </script>
 </body>
