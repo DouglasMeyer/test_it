@@ -146,7 +146,9 @@
     if (!T.Reporter.log){
       var log = T.Reporter.log = document.createElement('ul');
       log.id = T.Reporter.elementId;
-      document.body.appendChild(log);
+      T.waitFor(function(){ return document.body; }, function(){
+        document.body.appendChild(log);
+      });
       T.Reporter.summary = document.createElement('li');
       log.appendChild(T.Reporter.summary);
       T.Reporter.showPassing = false;
