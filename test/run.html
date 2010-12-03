@@ -309,15 +309,15 @@ TestIt('reporting', {
     }, fakeTestItReporter);
   },
   'should report passing tests': function(t){
-    t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['textContent']);
+    t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['innerHTML']);
     t.assertEqual('pass', log[0]['className']);
   },
   'should report failing tests': function(t){
-    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['textContent']);
+    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['innerHTML']);
     t.assertEqual('fail', log[1]['className']);
   },
   'should report erroring tests': function(t){
-    t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['textContent']);
+    t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
     t.assertEqual('error', log[2]['className']);
   }
 });

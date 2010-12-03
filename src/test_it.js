@@ -164,11 +164,10 @@
     this.reportContext(results);
     var runningCount, passCount, failCount, errorCount;
     var updateSummary = function(){
-      runningCount = log.getElementsByClassName('running').length - 1;
-      if (runningCount === -1) { runningCount = 0; }
-      passCount = log.getElementsByClassName('pass').length;
-      failCount = log.getElementsByClassName('fail').length;
-      errorCount = log.getElementsByClassName('error').length;
+      runningCount = T.Reporter.countWithResult('running');
+      passCount = T.Reporter.countWithResult('pass');
+      failCount = T.Reporter.countWithResult('fail');
+      errorCount = T.Reporter.countWithResult('error');
       var html;
       if (runningCount === 0){
         if (errorCount){
@@ -203,6 +202,13 @@
         summary.className = 'summary pass';
       }
     });
+  };
+  T.Reporter.countWithResult = function(result){
+    var count = 0, tests = T.Reporter.log.getElementsByTagName('li');
+    for (var i=1,e;e=tests[i];i++){
+      if (e.className === result) { count++; }
+    }
+    return count;
   };
   T.Reporter.elementId = 'test-it-results';
   T.Reporter.prototype.reportContext = function(results, contextName){
