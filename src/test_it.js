@@ -143,13 +143,64 @@
 
 // Reporter
   T.Reporter = function(results){
-    this.log = document.getElementById(T.Reporter.elementId);
-    if (this.log === null){
-      this.log = document.createElement('ul');
-      this.log.id = T.Reporter.elementId;
-      document.body.appendChild(this.log);
+    if (!T.Reporter.log){
+      var log = T.Reporter.log = document.createElement('ul');
+      log.id = T.Reporter.elementId;
+      document.body.appendChild(log);
+      T.Reporter.summary = document.createElement('li');
+      log.appendChild(T.Reporter.summary);
+      T.Reporter.showPassing = false;
+      T.Reporter.summary.onclick = function(){
+        T.Reporter.showPassing = !T.Reporter.showPassing;
+        log.className = T.Reporter.showPassing ? 'show-passing' : '';
+      };
     }
+    var log = T.Reporter.log,
+        summary = T.Reporter.summary;
+    summary.className = 'summary running';
+    summary.innerHTML = "Running...";
     this.reportContext(results);
+    var runningCount, passCount, failCount, errorCount;
+    var updateSummary = function(){
+      runningCount = log.getElementsByClassName('running').length - 1;
+      if (runningCount === -1) { runningCount = 0; }
+      passCount = log.getElementsByClassName('pass').length;
+      failCount = log.getElementsByClassName('fail').length;
+      errorCount = log.getElementsByClassName('error').length;
+      var html;
+      if (runningCount === 0){
+        if (errorCount){
+          html = 'Error! ';
+        } else if (failCount){
+          html = 'Fail. ';
+        } else {
+          html = 'Pass. ';
+        }
+      } else {
+        html = 'Running... ';
+      }
+      html += '<small>('+(runningCount+passCount+failCount+errorCount)+" tests: ";
+      var details = [];
+      if (runningCount) { details.push(runningCount+' running'); }
+      if (passCount) { details.push(passCount+' passed'); }
+      if (failCount) { details.push(failCount+' failed'); }
+      if (errorCount) { details.push(errorCount+' errored'); }
+      html += details.join(', ');
+      summary.innerHTML = html+')</small>';
+      return runningCount === 0;
+    };
+    T.waitFor(function(){
+      return updateSummary();
+    }, function(){
+      updateSummary();
+      if (errorCount) {
+        summary.className = 'summary error';
+      } else if (failCount) {
+        summary.className = 'summary fail';
+      } else {
+        summary.className = 'summary pass';
+      }
+    });
   };
   T.Reporter.elementId = 'test-it-results';
   T.Reporter.prototype.reportContext = function(results, contextName){
@@ -163,7 +214,7 @@
               html = contextName+name+': ';
           li.innerHTML = html + 'running...';
           li.className = 'running';
-          reporter.log.appendChild(li);
+          reporter.constructor.log.appendChild(li);
           T.waitFor(function(){ return result.running === false; }, function(){
             html += result.result;
             if (result.result !== 'pass' && result.message) {
