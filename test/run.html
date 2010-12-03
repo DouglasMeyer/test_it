@@ -92,15 +92,15 @@ TestIt('before/after tests and contexts', {
     t.assertEqual(['the tests'], keys);
 
     keys = [];
-    for (var key in TestIt.try(results,'the tests')) { keys.push(key); }
+    for (var key in results['the tests']) { keys.push(key); }
     t.assertEqual(['should work', 'context name', 'should also work'], keys);
 
-    t.assertEqual('pass',  TestIt.try(results,'the tests','should work','result'));
-    t.assertEqual('pass',  TestIt.try(results,'the tests','context name','should work','result'));
-    t.assertEqual('fail',  TestIt.try(results,'the tests','context name','should not work','result'));
-    t.assertEqual('nope',  TestIt.try(results,'the tests','context name','should not work','message'));
-    t.assertEqual('error', TestIt.try(results,'the tests','context name','should raise','result'));
-    t.assertEqual('ouch',  TestIt.try(results,'the tests','context name','should raise','message'));
+    t.assertEqual('pass',  results['the tests']['should work']['result']);
+    t.assertEqual('pass',  results['the tests']['context name']['should work']['result']);
+    t.assertEqual('fail',  results['the tests']['context name']['should not work']['result']);
+    t.assertEqual('nope',  results['the tests']['context name']['should not work']['message']);
+    t.assertEqual('error', results['the tests']['context name']['should raise']['result']);
+    t.assertEqual('ouch',  results['the tests']['context name']['should raise']['message']);
   }
 });
 
@@ -115,8 +115,8 @@ TestIt('exceptions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual('error', TestIt.try(results,'tests','before all','result'));
-      t.assertEqual('out', TestIt.try(results,'tests','before all','message'));
+      t.assertEqual('error', results['tests']['before all']['result']);
+      t.assertEqual('out', results['tests']['before all']['message']);
     },
     'should run the "after all"': function(t){
       t.assertEqual(1, calls.length);
@@ -138,8 +138,8 @@ TestIt('exceptions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual('error', TestIt.try(results,'tests','a test','result'));
-      t.assertEqual('out', TestIt.try(results,'tests','a test','message'));
+      t.assertEqual('error', results['tests']['a test']['result']);
+      t.assertEqual('out', results['tests']['a test']['message']);
     },
     'should run the "after each"': function(t){
       t.assertEqual(2, calls.length);
@@ -164,8 +164,8 @@ TestIt('exceptions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual('error', TestIt.try(results,'tests','a test','result'));
-      t.assertEqual('out', TestIt.try(results,'tests','a test','message'));
+      t.assertEqual('error', results['tests']['a test']['result']);
+      t.assertEqual('out', results['tests']['a test']['message']);
     },
     'should run the "after all"': function(t){
       t.assertEqual(1, calls.length);
@@ -183,7 +183,7 @@ TestIt('running assertions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual(1, TestIt.try(results,'tests','before all','assertions','length'));
+      t.assertEqual(1, results['tests']['before all']['assertions']['length']);
     }
   },
   'in "before each"': {
@@ -194,7 +194,7 @@ TestIt('running assertions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual(1, TestIt.try(results,'tests','a test','assertions','length'));
+      t.assertEqual(1, results['tests']['a test']['assertions']['length']);
     }
   },
   'in "after each"': {
@@ -205,7 +205,7 @@ TestIt('running assertions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual(1, TestIt.try(results,'tests','a test','assertions','length'));
+      t.assertEqual(1, results['tests']['a test']['assertions']['length']);
     }
   },
   'in "after all"': {
@@ -216,7 +216,7 @@ TestIt('running assertions', {
       }, fakeTestItReporter);
     },
     'should be reported': function(t){
-      t.assertEqual(1, TestIt.try(results,'tests','after all','assertions','length'));
+      t.assertEqual(1, results['tests']['after all']['assertions']['length']);
     }
   }
 });
@@ -309,16 +309,16 @@ TestIt('reporting', {
     }, fakeTestItReporter);
   },
   'should report passing tests': function(t){
-    t.assertEqual('tests: 1 test: pass (1 assertion run)', TestIt.try(log[0],'textContent'));
-    t.assertEqual('pass', TestIt.try(log[0],'className'));
+    t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['textContent']);
+    t.assertEqual('pass', log[0]['className']);
   },
   'should report failing tests': function(t){
-    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', TestIt.try(log[1],'textContent'));
-    t.assertEqual('fail', TestIt.try(log[1],'className'));
+    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['textContent']);
+    t.assertEqual('fail', log[1]['className']);
   },
   'should report erroring tests': function(t){
-    t.assertEqual('tests: 3 test: error: out (0 assertions run)', TestIt.try(log[2],'textContent'));
-    t.assertEqual('error', TestIt.try(log[2],'className'));
+    t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['textContent']);
+    t.assertEqual('error', log[2]['className']);
   }
 });
 

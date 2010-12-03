@@ -243,14 +243,6 @@
       return expected === actual;
     }
   };
-  T.try = function(){
-    var i=1,e=arguments[0];
-    while (e && arguments[i]) {
-      e = e[arguments[i]];
-      i = i + 1;
-    }
-    return e;
-  };
   T.inspect = function(subject){
     if (subject === undefined) { return 'undefined'; }
     switch(subject.constructor){
