@@ -21,26 +21,24 @@
     var results = {}, assertions;
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
-    var beforeAll  = tests['before all'],
-        afterAll   = tests['after all' ];
+    var beforeAll  = tests['before all'] || function(){},
+        afterAll   = tests['after all' ] || function(){};
     if (tests['before each']) { before.push(  tests['before each']); }
     if (tests['after each' ]) { after.unshift(tests['after each' ]); }
     delete(tests['before all' ]);
     delete(tests['before each']);
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
-    if (beforeAll){
-      try {
-        results['before all'] = { };
-        assertions = new T.Assertions(results['before all']);
-        beforeAll(assertions);
-        delete results['before all'];
-      } catch (e) {
-        results['before all'].assertions = assertions;
-        reportException(results['before all'], e);
-        afterAll && afterAll(assertions);
-        return results;
-      }
+    try {
+      results['before all'] = { };
+      assertions = new T.Assertions(results['before all']);
+      beforeAll(assertions);
+      delete results['before all'];
+    } catch (e) {
+      results['before all'].assertions = assertions;
+      reportException(results['before all'], e);
+      afterAll && afterAll(assertions);
+      return results;
     }
     T.waitFor(function(){
       return assertions === undefined || assertions.waitForCount === 0;
@@ -53,24 +51,22 @@
           results[testName] = new T.Context(test, before, after);
         }
       }
-      if (afterAll) {
-        T.waitFor(function(){
-          for(var name in results){
-            if (results[name].running === true){ return false; }
-          }
-          return true;
-        }, function(){
-          try {
-            results['after all'] = { };
-            assertions = new T.Assertions(results['after all']);
-            afterAll(assertions);
-            delete results['after all'];
-          } catch (e) {
-            results['after all'].assertions = assertions;
-            reportException(results['after all'], e);
-          }
-        });
-      }
+      T.waitFor(function(){
+        for(var name in results){
+          if (results[name].running === true){ return false; }
+        }
+        return true;
+      }, function(){
+        try {
+          results['after all'] = { };
+          assertions = new T.Assertions(results['after all']);
+          afterAll(assertions);
+          delete results['after all'];
+        } catch (e) {
+          results['after all'].assertions = assertions;
+          reportException(results['after all'], e);
+        }
+      });
     });
     return results;
   };
@@ -241,7 +237,9 @@
 
 // Helpers
   T.isEqual = function(expected, actual){
-    if (Array === expected.constructor) {
+    if (expected === undefined || actual === undefined) {
+      return expected === actual;
+    } else if (Array === expected.constructor) {
       if (expected.length !== actual.length) { return false; }
       for (var i=0,e;e=expected[i];i++){ if (e !== actual[i]){ return false; } }
       return true;

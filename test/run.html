@@ -20,8 +20,9 @@ var calls, results, log,
       log = this.constructor.log = [];
       log.appendChild = log.push;
       this.reportContext(results);
+      return results;
     };
-fakeTestItReporter.prototype = new TestIt.Reporter;
+fakeTestItReporter.prototype = new TestIt.Reporter({});
 fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 TestIt('before/after tests and contexts', {
   'before all': function(t){
@@ -300,6 +301,8 @@ TestIt('assertions', {
   }
 });
 
+(function(){
+var count=0;
 TestIt('reporting', {
   'before all': function(){
     TestIt('tests', {
@@ -321,6 +324,16 @@ TestIt('reporting', {
     t.assertEqual('error', log[2]['className']);
   }
 });
+})();
+
+// TestIt.isEqual
+(function(){
+  TestIt('TestIt.isEqual', {
+    'should be true for undefined and undefined': function(t){
+      t.assert(TestIt.isEqual(undefined, undefined));
+    }
+  });
+})();
 
 (function(){
 var inspectTests = function(input){
@@ -354,7 +367,7 @@ TestIt.waitFor(function(){
   window.waitForCallbackCalled = true;
 });
 setTimeout(function(){
-  TestIt('waitFor', {
+  TestIt('TestIt.waitFor', {
     'should have waited for condition, then ran callback': function(t){
       t.assert(window.waitForCallbackCalled);
     }
@@ -362,12 +375,13 @@ setTimeout(function(){
 }, 1000);
 
 (function(){
-var calls;
-TestIt('waitFor', {
+var calls, response, counter, start;
+    isDone = function(){ return counter === 100 || (new Date()) - start > (50+25)*100; };
+TestIt('t.waitFor', {
   'before all': function(){
     calls = [];
-    var counter = 0;
-    TestIt('tests', {
+    counter = 0;
+    response = TestIt('tests', {
       'before all': function(t){
         var name = 'before all';
         calls.push(name);
@@ -406,6 +420,7 @@ TestIt('waitFor', {
         t.waitFor(function(){
           return counter++ > 50;
         }, function(){
+          counter = 100;
           calls.push(name+' callback');
         });
       }
@@ -413,9 +428,7 @@ TestIt('waitFor', {
   },
   'should delay each call until the callbacks are called': function(t){
     var start = new Date();
-    t.waitFor(function(){
-      return (new Date()) - start > (50+25)*100;
-    }, function(){
+    t.waitFor(isDone, function(){
       var expected = [
         'before all', 'before all callback',
         'before each', 'before each callback',
