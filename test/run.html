@@ -15,7 +15,7 @@
   </style>
   <script src="../src/test_it.js"></script>
   <script>
-var calls, results, log,
+var log,
     fakeTestItReporter = function(results){
       log = this.constructor.log = [];
       log.appendChild = log.push;
@@ -24,203 +24,214 @@ var calls, results, log,
     };
 fakeTestItReporter.prototype = new TestIt.Reporter({});
 fakeTestItReporter.prototype.constructor = fakeTestItReporter;
-TestIt('before/after tests and contexts', {
-  'before all': function(t){
-    calls = [];
-    results = TestIt('the tests', {
-      'before all':  function(){ calls.push('before all');  },
-      'before each': function(){ calls.push('before each'); },
-      'after all':   function(){ calls.push('after all');   },
-      'after each':  function(){ calls.push('after each');  },
-      'should work': function(){ calls.push('should work'); },
-      'context name': {
-        'before all':       function(){ calls.push('context before all');  },
-        'before each':      function(){ calls.push('context before each'); },
-        'after all':        function(){ calls.push('context after all');   },
-        'after each':       function(){ calls.push('context after each');  },
-        'should work':      function(){ calls.push('context should work'); },
-        'should also work': function(){ calls.push('context should also work'); },
-        'should not work':  function(t){ calls.push('context should not work'); t.assert(false, 'nope'); },
-        'should raise':     function(){ calls.push('context should raise'); throw 'ouch'; }
+
+(function(){
+  var calls, results;
+
+  TestIt('before/after tests and contexts', {
+    'before all': function(t){
+      calls = [];
+      results = TestIt('the tests', {
+        'before all':  function(){ calls.push('before all');  },
+        'before each': function(){ calls.push('before each'); },
+        'after all':   function(){ calls.push('after all');   },
+        'after each':  function(){ calls.push('after each');  },
+        'should work': function(){ calls.push('should work'); },
+        'context name': {
+          'before all':       function(){ calls.push('context before all');  },
+          'before each':      function(){ calls.push('context before each'); },
+          'after all':        function(){ calls.push('context after all');   },
+          'after each':       function(){ calls.push('context after each');  },
+          'should work':      function(){ calls.push('context should work'); },
+          'should also work': function(){ calls.push('context should also work'); },
+          'should not work':  function(t){ calls.push('context should not work'); t.assert(false, 'nope'); },
+          'should raise':     function(){ calls.push('context should raise'); throw 'ouch'; }
+        },
+        'should also work': function(){ calls.push('should also work'); }
+      }, fakeTestItReporter);
+    },
+    'should be in order': function(t){
+      var expected = [];
+      expected.push('before all');
+        expected.push('before each');
+        expected.push('should work');
+        expected.push('after each');
+
+        expected.push('context before all');
+          expected.push('before each');
+          expected.push('context before each');
+          expected.push('context should work');
+          expected.push('context after each');
+          expected.push('after each');
+
+          expected.push('before each');
+          expected.push('context before each');
+          expected.push('context should also work');
+          expected.push('context after each');
+          expected.push('after each');
+
+          expected.push('before each');
+          expected.push('context before each');
+          expected.push('context should not work');
+          expected.push('context after each');
+          expected.push('after each');
+
+          expected.push('before each');
+          expected.push('context before each');
+          expected.push('context should raise');
+          expected.push('context after each');
+          expected.push('after each');
+        expected.push('context after all');
+
+        expected.push('before each');
+        expected.push('should also work');
+        expected.push('after each');
+      expected.push('after all');
+      t.assertEqual(expected, calls);
+    },
+    'should return results': function(t){
+      var keys;
+
+      keys = [];
+      for (var key in results) { keys.push(key); }
+      t.assertEqual(['the tests'], keys);
+
+      keys = [];
+      for (var key in results['the tests']) { keys.push(key); }
+      t.assertEqual(['should work', 'context name', 'should also work'], keys);
+
+      t.assertEqual('pass',  results['the tests']['should work']['result']);
+      t.assertEqual('pass',  results['the tests']['context name']['should work']['result']);
+      t.assertEqual('fail',  results['the tests']['context name']['should not work']['result']);
+      t.assertEqual('nope',  results['the tests']['context name']['should not work']['message']);
+      t.assertEqual('error', results['the tests']['context name']['should raise']['result']);
+      t.assertEqual('ouch',  results['the tests']['context name']['should raise']['message']);
+    }
+  });
+})();
+
+(function(){
+  var calls, results;
+  TestIt('exceptions', {
+    'in "before all"': {
+      'before all': function(t){
+        calls = [];
+        results = TestIt('tests', {
+          'before all': function(){ throw 'out'; },
+          'after all': function(){ calls.push('after all'); },
+          'a test': function(){ calls.push('a test'); }
+        }, fakeTestItReporter);
       },
-      'should also work': function(){ calls.push('should also work'); }
-    }, fakeTestItReporter);
-  },
-  'should be in order': function(t){
-    var expected = [];
-    expected.push('before all');
-      expected.push('before each');
-      expected.push('should work');
-      expected.push('after each');
-
-      expected.push('context before all');
-        expected.push('before each');
-        expected.push('context before each');
-        expected.push('context should work');
-        expected.push('context after each');
-        expected.push('after each');
-
-        expected.push('before each');
-        expected.push('context before each');
-        expected.push('context should also work');
-        expected.push('context after each');
-        expected.push('after each');
-
-        expected.push('before each');
-        expected.push('context before each');
-        expected.push('context should not work');
-        expected.push('context after each');
-        expected.push('after each');
-
-        expected.push('before each');
-        expected.push('context before each');
-        expected.push('context should raise');
-        expected.push('context after each');
-        expected.push('after each');
-      expected.push('context after all');
-
-      expected.push('before each');
-      expected.push('should also work');
-      expected.push('after each');
-    expected.push('after all');
-    t.assertEqual(expected, calls);
-  },
-  'should return results': function(t){
-    var keys;
-
-    keys = [];
-    for (var key in results) { keys.push(key); }
-    t.assertEqual(['the tests'], keys);
-
-    keys = [];
-    for (var key in results['the tests']) { keys.push(key); }
-    t.assertEqual(['should work', 'context name', 'should also work'], keys);
-
-    t.assertEqual('pass',  results['the tests']['should work']['result']);
-    t.assertEqual('pass',  results['the tests']['context name']['should work']['result']);
-    t.assertEqual('fail',  results['the tests']['context name']['should not work']['result']);
-    t.assertEqual('nope',  results['the tests']['context name']['should not work']['message']);
-    t.assertEqual('error', results['the tests']['context name']['should raise']['result']);
-    t.assertEqual('ouch',  results['the tests']['context name']['should raise']['message']);
-  }
-});
-
-TestIt('exceptions', {
-  'in "before all"': {
-    'before all': function(t){
-      calls = [];
-      results = TestIt('tests', {
-        'before all': function(){ throw 'out'; },
-        'after all': function(){ calls.push('after all'); },
-        'a test': function(){ calls.push('a test'); }
-      }, fakeTestItReporter);
+      'should be reported': function(t){
+        t.assertEqual('error', results['tests']['before all']['result']);
+        t.assertEqual('out', results['tests']['before all']['message']);
+      },
+      'should run the "after all"': function(t){
+        t.assertEqual(1, calls.length);
+        t.assertEqual('after all', calls[0]);
+      },
+      'should not run test': function(t){
+        t.assertEqual(1, calls.length);
+        t.assert(calls[0] !== 'a test');
+      }
     },
-    'should be reported': function(t){
-      t.assertEqual('error', results['tests']['before all']['result']);
-      t.assertEqual('out', results['tests']['before all']['message']);
+    'in "before each"': {
+      'before all': function(t){
+        calls = [];
+        results = TestIt('tests', {
+          'before each': function(){ throw 'out'; },
+          'after each': function(){ calls.push('after each'); },
+          'after all': function(){ calls.push('after all'); },
+          'a test': function(){ calls.push('a test'); }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual('error', results['tests']['a test']['result']);
+        t.assertEqual('out', results['tests']['a test']['message']);
+      },
+      'should run the "after each"': function(t){
+        t.assertEqual(2, calls.length);
+        t.assertEqual('after each', calls[0]);
+      },
+      'should run the "after all"': function(t){
+        t.assertEqual(2, calls.length);
+        t.assertEqual('after all', calls[1]);
+      },
+      'should not run test': function(t){
+        t.assertEqual(2, calls.length);
+        t.assert(calls[0] !== 'a test' && calls[1] !== 'a test');
+      }
     },
-    'should run the "after all"': function(t){
-      t.assertEqual(1, calls.length);
-      t.assertEqual('after all', calls[0]);
-    },
-    'should not run test': function(t){
-      t.assertEqual(1, calls.length);
-      t.assert(calls[0] !== 'a test');
+    'in "after each"': {
+      'before all': function(t){
+        calls = [];
+        results = TestIt('tests', {
+          'after each': function(){ throw 'out'; },
+          'after all': function(){ calls.push('after all'); },
+          'a test': function(){ }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual('error', results['tests']['a test']['result']);
+        t.assertEqual('out', results['tests']['a test']['message']);
+      },
+      'should run the "after all"': function(t){
+        t.assertEqual(1, calls.length);
+        t.assertEqual('after all', calls[0]);
+      }
     }
-  },
-  'in "before each"': {
-    'before all': function(t){
-      calls = [];
-      results = TestIt('tests', {
-        'before each': function(){ throw 'out'; },
-        'after each': function(){ calls.push('after each'); },
-        'after all': function(){ calls.push('after all'); },
-        'a test': function(){ calls.push('a test'); }
-      }, fakeTestItReporter);
-    },
-    'should be reported': function(t){
-      t.assertEqual('error', results['tests']['a test']['result']);
-      t.assertEqual('out', results['tests']['a test']['message']);
-    },
-    'should run the "after each"': function(t){
-      t.assertEqual(2, calls.length);
-      t.assertEqual('after each', calls[0]);
-    },
-    'should run the "after all"': function(t){
-      t.assertEqual(2, calls.length);
-      t.assertEqual('after all', calls[1]);
-    },
-    'should not run test': function(t){
-      t.assertEqual(2, calls.length);
-      t.assert(calls[0] !== 'a test' && calls[1] !== 'a test');
-    }
-  },
-  'in "after each"': {
-    'before all': function(t){
-      calls = [];
-      results = TestIt('tests', {
-        'after each': function(){ throw 'out'; },
-        'after all': function(){ calls.push('after all'); },
-        'a test': function(){ }
-      }, fakeTestItReporter);
-    },
-    'should be reported': function(t){
-      t.assertEqual('error', results['tests']['a test']['result']);
-      t.assertEqual('out', results['tests']['a test']['message']);
-    },
-    'should run the "after all"': function(t){
-      t.assertEqual(1, calls.length);
-      t.assertEqual('after all', calls[0]);
-    }
-  }
-});
+  });
+})();
 
-TestIt('running assertions', {
-  'in "before all"': {
-    'before all': function(){
-      results = TestIt('tests', {
-        'before all': function(t){ t.assert(false); },
-        'a test': function(){ }
-      }, fakeTestItReporter);
+(function(){
+  var results;
+  TestIt('running assertions', {
+    'in "before all"': {
+      'before all': function(){
+        results = TestIt('tests', {
+          'before all': function(t){ t.assert(false); },
+          'a test': function(){ }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual(1, results['tests']['before all']['assertions']['length']);
+      }
     },
-    'should be reported': function(t){
-      t.assertEqual(1, results['tests']['before all']['assertions']['length']);
-    }
-  },
-  'in "before each"': {
-    'before all': function(){
-      results = TestIt('tests', {
-        'before each': function(t){ t.assert(false); },
-        'a test': function(){ }
-      }, fakeTestItReporter);
+    'in "before each"': {
+      'before all': function(){
+        results = TestIt('tests', {
+          'before each': function(t){ t.assert(false); },
+          'a test': function(){ }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual(1, results['tests']['a test']['assertions']['length']);
+      }
     },
-    'should be reported': function(t){
-      t.assertEqual(1, results['tests']['a test']['assertions']['length']);
-    }
-  },
-  'in "after each"': {
-    'before all': function(){
-      results = TestIt('tests', {
-        'after each': function(t){ t.assert(false); },
-        'a test': function(){ }
-      }, fakeTestItReporter);
+    'in "after each"': {
+      'before all': function(){
+        results = TestIt('tests', {
+          'after each': function(t){ t.assert(false); },
+          'a test': function(){ }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual(1, results['tests']['a test']['assertions']['length']);
+      }
     },
-    'should be reported': function(t){
-      t.assertEqual(1, results['tests']['a test']['assertions']['length']);
+    'in "after all"': {
+      'before all': function(){
+        results = TestIt('tests', {
+          'after all': function(t){ t.assert(false); },
+          'a test': function(){ }
+        }, fakeTestItReporter);
+      },
+      'should be reported': function(t){
+        t.assertEqual(1, results['tests']['after all']['assertions']['length']);
+      }
     }
-  },
-  'in "after all"': {
-    'before all': function(){
-      results = TestIt('tests', {
-        'after all': function(t){ t.assert(false); },
-        'a test': function(){ }
-      }, fakeTestItReporter);
-    },
-    'should be reported': function(t){
-      t.assertEqual(1, results['tests']['after all']['assertions']['length']);
-    }
-  }
-});
+  });
+})();
 
 TestIt('assertions', {
   'assert': {
@@ -302,144 +313,117 @@ TestIt('assertions', {
 });
 
 (function(){
-var count=0;
-TestIt('reporting', {
-  'before all': function(){
-    TestIt('tests', {
-      '1 test': function(t){ t.assert(true); },
-      '2 test': function(t){ t.assert(false, 'fail message'); },
-      '3 test': function(t){ throw 'out'; }
-    }, fakeTestItReporter);
-  },
-  'should report passing tests': function(t){
-    t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['innerHTML']);
-    t.assertEqual('pass', log[0]['className']);
-  },
-  'should report failing tests': function(t){
-    t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['innerHTML']);
-    t.assertEqual('fail', log[1]['className']);
-  },
-  'should report erroring tests': function(t){
-    t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
-    t.assertEqual('error', log[2]['className']);
-  }
-});
-})();
-
-// TestIt.isEqual
-(function(){
-  TestIt('TestIt.isEqual', {
-    'should be true for undefined and undefined': function(t){
-      t.assert(TestIt.isEqual(undefined, undefined));
+  var count=0;
+  TestIt('reporting', {
+    'before all': function(){
+      TestIt('tests', {
+        '1 test': function(t){ t.assert(true); },
+        '2 test': function(t){ t.assert(false, 'fail message'); },
+        '3 test': function(t){ throw 'out'; }
+      }, fakeTestItReporter);
+    },
+    'should report passing tests': function(t){
+      t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['innerHTML']);
+      t.assertEqual('pass', log[0]['className']);
+    },
+    'should report failing tests': function(t){
+      t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['innerHTML']);
+      t.assertEqual('fail', log[1]['className']);
+    },
+    'should report erroring tests': function(t){
+      t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
+      t.assertEqual('error', log[2]['className']);
     }
   });
 })();
 
-(function(){
-var inspectTests = function(input){
-  var tests = {};
-  while(input.length >= 3){
-    (function(){
-      var subject = input.shift(),
-          outcome = input.shift(),
-          description = input.shift();
-      tests[description+" '"+subject+"' should yield '"+outcome+"'"] = function(t){
-        t.assertEqual(outcome, TestIt.inspect(subject));
-      }
-    })();
+TestIt('TestIt.isEqual', {
+  'should be true for undefined and undefined': function(t){
+    t.assert(TestIt.isEqual(undefined, undefined));
   }
-  return tests;
-};
-TestIt('TestIt.inspect', inspectTests([
-  1, '1', 'Integer',
-  '1', '"1"', 'String',
-  [1,2,3], '[1,2,3]', 'Array',
-  ['a','b'], '["a","b"]', 'Array of Strings',
-  undefined, 'undefined', 'Undefined'
-]));
+});
+
+(function(){
+  var inspectTests = function(input){
+    var tests = {};
+    while(input.length >= 3){
+      (function(){
+        var subject = input.shift(),
+            outcome = input.shift(),
+            description = input.shift();
+        tests[description+" '"+subject+"' should yield '"+outcome+"'"] = function(t){
+          t.assertEqual(outcome, TestIt.inspect(subject));
+        }
+      })();
+    }
+    return tests;
+  };
+
+  TestIt('TestIt.inspect', inspectTests([
+//  subject, outcome, subject description
+    1, '1', 'Integer',
+    '1', '"1"', 'String',
+    [1,2,3], '[1,2,3]', 'Array',
+    ['a','b'], '["a","b"]', 'Array of Strings',
+    undefined, 'undefined', 'Undefined'
+  ]));
 })();
 
-window.waitForCallbackCalled = false;
-var start = new Date();
-TestIt.waitFor(function(){
-  return (new Date()) - start > 500;
-}, function(){
-  window.waitForCallbackCalled = true;
-});
-setTimeout(function(){
-  TestIt('TestIt.waitFor', {
-    'should have waited for condition, then ran callback': function(t){
-      t.assert(window.waitForCallbackCalled);
-    }
-  });
-}, 1000);
-
 (function(){
-var calls, response, counter, start;
-    isDone = function(){ return counter === 100 || (new Date()) - start > (50+25)*100; };
-TestIt('t.waitFor', {
-  'before all': function(){
-    calls = [];
-    counter = 0;
-    response = TestIt('tests', {
-      'before all': function(t){
-        var name = 'before all';
-        calls.push(name);
-        t.waitFor(function(){
-          return counter++ > 10;
-        }, function(){
-          calls.push(name+' callback');
-        });
-      }, 'before each': function(t){
-        var name = 'before each';
-        calls.push(name);
-        t.waitFor(function(){
-          return counter++ > 20;
-        }, function(){
-          calls.push(name+' callback');
-        });
-      }, 'test': function(t){
-        var name = 'test';
-        calls.push(name);
-        t.waitFor(function(){
-          return counter++ > 30;
-        }, function(){
-          calls.push(name+' callback');
-        });
-      }, 'after each': function(t){
-        var name = 'after each';
-        calls.push(name);
-        t.waitFor(function(){
-          return counter++ > 40;
-        }, function(){
-          calls.push(name+' callback');
-        });
-      }, 'after all': function(t){
-        var name = 'after all';
-        calls.push(name);
-        t.waitFor(function(){
-          return counter++ > 50;
-        }, function(){
-          counter = 100;
-          calls.push(name+' callback');
-        });
+  var waitForCallbackCalled = false,
+      start = new Date();
+
+  TestIt.waitFor(function(){
+    return (new Date()) - start > 500;
+  }, function(){
+    waitForCallbackCalled = true;
+  });
+  setTimeout(function(){
+    TestIt('TestIt.waitFor', {
+      'should have waited for condition, then ran callback': function(t){
+        t.assert(waitForCallbackCalled);
       }
-    }, fakeTestItReporter);
-  },
-  'should delay each call until the callbacks are called': function(t){
-    var start = new Date();
-    t.waitFor(isDone, function(){
-      var expected = [
-        'before all', 'before all callback',
-        'before each', 'before each callback',
-        'test', 'test callback',
-        'after each', 'after each callback',
-        'after all', 'after all callback'
-      ];
-      t.assertEqual(expected, calls);
     });
-  }
-});
+  }, 1000);
+})();
+
+(function(){
+  var calls, counter, start,
+      isDone = function(){ return counter === 100 || (new Date()) - start > 3000; };
+  TestIt('t.waitFor', {
+    'before all': function(){
+      calls = [];
+      counter = 0;
+      steps = ['before all', 'before each', 'test', 'after each', 'after all'];
+      tests = {};
+      for (var i=0,n; s=steps[i]; i++){
+        (function(index, step){
+          tests[step] = function(t){
+            calls.push(step);
+            t.waitFor(function(){
+              return counter++ > index*5;
+            }, function(){
+              calls.push(step+' callback');
+            });
+          }
+        })(i,s);
+      };
+      start = new Date();
+      TestIt('tests', tests, fakeTestItReporter);
+    },
+    'should delay each call until the callbacks are called': function(t){
+      t.waitFor(isDone, function(){
+        var expected = [
+          'before all', 'before all callback',
+          'before each', 'before each callback',
+          'test', 'test callback',
+          'after each', 'after each callback',
+          'after all', 'after all callback'
+        ];
+        t.assertEqual(expected, calls);
+      });
+    }
+  });
 })();
   </script>
 </head>
