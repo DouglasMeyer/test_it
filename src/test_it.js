@@ -237,7 +237,7 @@
 
 // Helpers
   T.isEqual = function(expected, actual){
-    if (expected === undefined || actual === undefined) {
+    if (expected === undefined || actual === undefined || expected === null || actual === null) {
       return expected === actual;
     } else if (Array === expected.constructor) {
       if (expected.length !== actual.length) { return false; }
@@ -249,6 +249,7 @@
   };
   T.inspect = function(subject){
     if (subject === undefined) { return 'undefined'; }
+    if (subject === null) { return 'null'; }
     switch(subject.constructor){
     case String: return '"'+subject+'"';
     case Array:

@@ -233,84 +233,102 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
   });
 })();
 
-TestIt('assertions', {
-  'assert': {
-    'should not raise if passed true': function(t){
-      var raised = 'did not raise';
-      try {
-        t.assert(true);
-      } catch (e) {
-        raised = 'did raise';
+(function(){
+  var origTestItIsEqual = TestIt.isEqual;
+  TestIt('assertions', {
+    'assert': {
+      'should not raise if passed true': function(t){
+        var raised = 'did not raise';
+        try {
+          t.assert(true);
+        } catch (e) {
+          raised = 'did raise';
+        }
+        t.assertEqual('did not raise', raised);
+      },
+      'should raise if passed false': function(t){
+        var raised = 'did not raise';
+        try {
+          t.assert(false);
+        } catch (e) {
+          raised = 'did raise';
+        }
+        t.assertEqual('did raise', raised);
+      },
+      'should raise with a TestIt.Assertions.Failure': function(t){
+        var exception;
+        try {
+          t.assert(false);
+        } catch (e) {
+          exception = e;
+        }
+        t.assertEqual(TestIt.Assertions.Failure, exception.constructor);
+      },
+      'should raise with a default message': function(t){
+        var exception;
+        try {
+          t.assert(false);
+        } catch (e) {
+          exception = e;
+        }
+        t.assertEqual('false is not true', exception.message);
+      },
+      'should raise with a message': function(t){
+        var exception;
+        try {
+          t.assert(false, 'it should have been true');
+        } catch (e) {
+          exception = e;
+        }
+        t.assertEqual('it should have been true', exception.message);
       }
-      t.assertEqual('did not raise', raised);
     },
-    'should raise if passed false': function(t){
-      var raised = 'did not raise';
-      try {
-        t.assert(false);
-      } catch (e) {
-        raised = 'did raise';
+    'assertEqual': {
+      'after all': function(t){
+        TestIt.isEqual = origTestItIsEqual;
+      },
+      'should check using TestIt.isEqual': function(t){
+        var isEqualWasCalled = false;
+        TestIt.isEqual = function(){ isEqualWasCalled = true; return true; };
+        try {
+          t.assertEqual();
+        } catch(e) {}
+        t.assert(isEqualWasCalled);
+      },
+      'should not raise when equal': function(t){
+        var didRaise = false;
+        TestIt.isEqual = function(){ return true; };
+        try {
+          t.assertEqual();
+        } catch(e) {
+          didRaise = true;
+        }
+        t.assert(!didRaise);
+      },
+      'should raise when not equal': function(t){
+        var didRaise = false;
+        TestIt.isEqual = function(){ return false; };
+        try {
+          t.assertEqual();
+        } catch(e) {
+          didRaise = true;
+        }
+        t.assert(didRaise);
+      },
+      'should raise with a default message': function(t){
+        var defaultMessage;
+        TestIt.isEqual = function(){ return false; };
+        try {
+          t.assertEqual(1, [3,2,1]);
+        } catch (e) {
+          defaultMessage = e.message;
+        }
+        TestIt.isEqual = origTestItIsEqual;
+        t.assertEqual('expected 1 but was [3,2,1]', defaultMessage);
       }
-      t.assertEqual('did raise', raised);
-    },
-    'should raise with a TestIt.Assertions.Failure': function(t){
-      var exception;
-      try {
-        t.assert(false);
-      } catch (e) {
-        exception = e;
-      }
-      t.assertEqual(TestIt.Assertions.Failure, exception.constructor);
-    },
-    'should raise with a default message': function(t){
-      var exception;
-      try {
-        t.assert(false);
-      } catch (e) {
-        exception = e;
-      }
-      t.assertEqual('false is not true', exception.message);
-    },
-    'should raise with a message': function(t){
-      var exception;
-      try {
-        t.assert(false, 'it should have been true');
-      } catch (e) {
-        exception = e;
-      }
-      t.assertEqual('it should have been true', exception.message);
     }
-  },
-  'assertEqual': {
-    'should not raise when arrays are equal': function(t){
-      var raised = 'did not raise';
-      try {
-        t.assertEqual([1,2,3], [1,2,3]);
-      } catch (e) {
-        raised = 'did raise';
-      }
-      t.assertEqual('did not raise', raised);
-    },
-    'should raise when arrays are not equal': function(t){
-      var raised = 'did not raise';
-      try {
-        t.assertEqual([1,2,3], [1,3,2]);
-      } catch (e) {
-        raised = 'did raise';
-      }
-      t.assertEqual('did raise', raised);
-    },
-    'should raise with a default message': function(t){
-      var exception;
-      try {
-        t.assertEqual([1,2,3], [3,2,1]);
-      } catch (e) {
-        exception = e;
-      }
-      t.assertEqual('expected [1,2,3] but was [3,2,1]', exception.message);
-    }
-  }
-});
+  });
+})();
 
 (function(){
   var count=0;
@@ -337,11 +355,26 @@ TestIt('assertions', {
   });
 })();
 
-TestIt('TestIt.isEqual', {
-  'should be true for undefined and undefined': function(t){
-    t.assert(TestIt.isEqual(undefined, undefined));
-  }
-});
+(function(){
+  var isEqualTests = function(input){
+    var tests = {};
+    while(input.length >= 3){
+      (function(obj1, obj2, isEqual){
+        tests[TestIt.inspect(obj1)+' and '+TestIt.inspect(obj2)+' should '+(isEqual ? '' : 'not ')+'be equal'] = function(t){
+          t.assertEqual(isEqual, TestIt.isEqual(obj1, obj2));
+        };
+      })(input.shift(), input.shift(), input.shift());
+    }
+    return tests;
+  };
+
+  TestIt('TestIt.isEqual', isEqualTests([
+    // obj1, obj2, are equal?
+    undefined, undefined, true,
+    null, null, true,
+    null, 'not null', false
+  ]));
+})();
 
 (function(){
   var inspectTests = function(input){
@@ -353,7 +386,7 @@ TestIt('TestIt.isEqual', {
             description = input.shift();
         tests[description+" '"+subject+"' should yield '"+outcome+"'"] = function(t){
           t.assertEqual(outcome, TestIt.inspect(subject));
-        }
+        };
       })();
     }
     return tests;
@@ -365,7 +398,8 @@ TestIt('TestIt.isEqual', {
     '1', '"1"', 'String',
     [1,2,3], '[1,2,3]', 'Array',
     ['a','b'], '["a","b"]', 'Array of Strings',
-    undefined, 'undefined', 'Undefined'
+    undefined, 'undefined', 'Undefined',
+    null, 'null', 'null'
   ]));
 })();
 
