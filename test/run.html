@@ -368,6 +368,10 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     return tests;
   };
 
+  var recursiveObject = {a:1};
+  recursiveObject.self = recursiveObject;
+  var recursiveArray = [1];
+  recursiveArray.push(recursiveArray);
   TestIt('TestIt.isEqual', isEqualTests([
     // obj1, obj2, are equal?
     undefined, undefined, true,
@@ -376,7 +380,9 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     {}, {}, true,
     {a: 1}, {b: 2}, false,
     {a: [1,2]}, {a: [1,2]}, true,
-    [{a:1}], [{a:1}], true
+    [{a:1}], [{a:1}], true,
+    recursiveObject, recursiveObject, true,
+    recursiveArray, recursiveArray, true
   ]));
 })();
 
@@ -396,6 +402,10 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     return tests;
   };
 
+  var recursiveObject = {a:1};
+  recursiveObject.self = recursiveObject;
+  var recursiveArray = [1];
+  recursiveArray.push(recursiveArray);
   TestIt('TestIt.inspect', inspectTests([
 //  subject, outcome, subject description
     1, '1', 'Integer',
@@ -404,7 +414,9 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     ['a','b'], '["a","b"]', 'Array of Strings',
     undefined, 'undefined', 'Undefined',
     null, 'null', 'null',
-    {a:1,b:2}, '{a:1,b:2}', 'Object'
+    {a:1,b:2}, '{a:1,b:2}', 'Object',
+    recursiveObject, '{a:1,self:<recursive>}', 'Recursive object',
+    recursiveArray, '[1,<recursive>]', 'Recursive array'
   ]));
 })();
 

@@ -243,30 +243,24 @@
 
 // Helpers
   T.isEqual = function(expected, actual){
-    if (expected === undefined || actual === undefined || expected === null || actual === null) {
-      return expected === actual;
-    } else if (Array === expected.constructor) {
-      if (expected.length !== actual.length) { return false; }
-      for (var i=0,e;e=expected[i];i++){ if (!T.isEqual(e,actual[i])){ return false; } }
-      return true;
-    } else if (typeof(expected) === 'object'){
-      for (var e in expected){ if(!T.isEqual(expected[e],actual[e])){ return false; } }
-      for (var e in actual){   if(!T.isEqual(expected[e],actual[e])){ return false; } }
-      return true;
-    } else {
-      return expected === actual;
-    }
+    return T.inspect(expected) === T.inspect(actual);
   };
-  T.inspect = function(subject){
+  T.inspect = function(subject, stack){
     if (subject === undefined) { return 'undefined'; }
     if (subject === null) { return 'null'; }
+    stack = stack || [];
+    stack.push(subject);
     switch(subject.constructor){
     case String: return '"'+subject+'"';
     case Array:
       var output='[', first=true;
       for(var e in subject){
         if (!first){ output += ','; }
-        output += T.inspect(subject[e]);
+        if (stack.indexOf(subject[e]) === -1){
+          output += T.inspect(subject[e], stack);
+        } else {
+          output += '<recursive>';
+        }
         first = false;
       }
       return output+']';
@@ -274,7 +268,11 @@
       var output = '{', first=true;
       for(var e in subject){
         if (!first){ output += ','; }
-        output += e+':'+T.inspect(subject[e]);
+        if (stack.indexOf(subject[e]) === -1){
+          output += e+':'+T.inspect(subject[e], stack);
+        } else {
+          output += e+':<recursive>';
+        }
         first = false;
       }
       return output+'}';
