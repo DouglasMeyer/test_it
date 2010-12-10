@@ -129,11 +129,17 @@
   };
   T.Assertions.prototype.assert = function(assertion, message){
     this.length = this.length + 1;
-    if (!assertion) { throw new T.Assertions.Failure(message || assertion+" is not true"); }
+    if (!assertion) {
+      if (message === undefined) { message = assertion+" is not true"; }
+      throw new T.Assertions.Failure(message);
+    }
   };
   T.Assertions.prototype.assertEqual = function(expected, actual, message){
     this.length = this.length + 1;
-    if (!T.isEqual(expected, actual)) { throw new T.Assertions.Failure(message || "expected "+T.inspect(expected)+" but was "+T.inspect(actual)); }
+    if (!T.isEqual(expected, actual)) {
+      if (message === undefined) { message = "expected "+T.inspect(expected)+" but was "+T.inspect(actual); }
+      throw new T.Assertions.Failure(message);
+    }
   };
   T.Assertions.Failure = function(message){ this.message = message; };
 
@@ -241,7 +247,11 @@
       return expected === actual;
     } else if (Array === expected.constructor) {
       if (expected.length !== actual.length) { return false; }
-      for (var i=0,e;e=expected[i];i++){ if (e !== actual[i]){ return false; } }
+      for (var i=0,e;e=expected[i];i++){ if (!T.isEqual(e,actual[i])){ return false; } }
+      return true;
+    } else if (typeof(expected) === 'object'){
+      for (var e in expected){ if(!T.isEqual(expected[e],actual[e])){ return false; } }
+      for (var e in actual){   if(!T.isEqual(expected[e],actual[e])){ return false; } }
       return true;
     } else {
       return expected === actual;
@@ -260,6 +270,14 @@
         first = false;
       }
       return output+']';
+    case Object:
+      var output = '{', first=true;
+      for(var e in subject){
+        if (!first){ output += ','; }
+        output += e+':'+T.inspect(subject[e]);
+        first = false;
+      }
+      return output+'}';
     }
     return subject.toString();
   };

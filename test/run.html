@@ -361,7 +361,7 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     while(input.length >= 3){
       (function(obj1, obj2, isEqual){
         tests[TestIt.inspect(obj1)+' and '+TestIt.inspect(obj2)+' should '+(isEqual ? '' : 'not ')+'be equal'] = function(t){
-          t.assertEqual(isEqual, TestIt.isEqual(obj1, obj2));
+          t.assertEqual(isEqual, TestIt.isEqual(obj1, obj2), null);
         };
       })(input.shift(), input.shift(), input.shift());
     }
@@ -372,7 +372,11 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     // obj1, obj2, are equal?
     undefined, undefined, true,
     null, null, true,
-    null, 'not null', false
+    null, 'not null', false,
+    {}, {}, true,
+    {a: 1}, {b: 2}, false,
+    {a: [1,2]}, {a: [1,2]}, true,
+    [{a:1}], [{a:1}], true
   ]));
 })();
 
@@ -399,7 +403,8 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     [1,2,3], '[1,2,3]', 'Array',
     ['a','b'], '["a","b"]', 'Array of Strings',
     undefined, 'undefined', 'Undefined',
-    null, 'null', 'null'
+    null, 'null', 'null',
+    {a:1,b:2}, '{a:1,b:2}', 'Object'
   ]));
 })();
 
