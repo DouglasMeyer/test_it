@@ -111,6 +111,63 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 })();
 
 (function(){
+  var calls = [];
+
+  TestIt('extensions', {
+    'before all': function(t){
+      var extension1 = {
+        'before all': function(){ calls.push('extension1 before all'); },
+        'before each': function(){ calls.push('extension1 before each'); },
+        'after all': function(){ calls.push('extension1 after all'); },
+        'after each': function(){ calls.push('extension1 after each'); },
+      };
+      var extension2 = {
+        'before all': function(){ calls.push('extension2 before all'); },
+        'before each': function(){ calls.push('extension2 before each'); },
+        'after all': function(){ calls.push('extension2 after all'); },
+        'after each': function(){ calls.push('extension2 after each'); },
+      };
+      TestIt('testing', {
+        'before all': function(){ calls.push('before all'); },
+        'before each': function(){ calls.push('before each'); },
+        'after all': function(){ calls.push('after all'); },
+        'after each': function(){ calls.push('after each'); },
+        'test something': function(){ calls.push('test something'); },
+        'test something else': function(){ calls.push('test something else'); },
+      }, extension1, extension2, fakeTestItReporter);
+    },
+    'should include before/after all/each': function(t){
+      var expected = [
+        'extension1 before all',
+        'extension2 before all',
+        'before all',
+
+          'extension1 before each',
+          'extension2 before each',
+          'before each',
+          'test something',
+          'after each',
+          'extension2 after each',
+          'extension1 after each',
+
+          'extension1 before each',
+          'extension2 before each',
+          'before each',
+          'test something else',
+          'after each',
+          'extension2 after each',
+          'extension1 after each',
+
+        'after all',
+        'extension2 after all',
+        'extension1 after all'
+      ];
+      t.assertEqual(expected, calls);
+    }
+  });
+})();
+
+(function(){
   var calls, results;
   TestIt('exceptions', {
     'in "before all"': {

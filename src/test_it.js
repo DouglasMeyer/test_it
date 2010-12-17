@@ -1,7 +1,18 @@
 (function(global){
 
-  var T = global.TestIt = function(name, tests, reporter){
-    reporter = reporter || T.Reporter;
+  var T = global.TestIt = function(name, tests){
+    var options = Array.prototype.slice.call(arguments, 2);
+    var reporter = T.Reporter;
+    if (options.length > 0 && options[options.length-1].constructor === Function){
+      reporter = options.pop();
+    }
+    var extension;
+    while(extension = options.pop()){
+      tests = { '': tests };
+      for (var name in extension){
+        tests[name] = extension[name];
+      }
+    }
     var results = {};
     results[name] = new T.Context(tests);
     new reporter(results);
