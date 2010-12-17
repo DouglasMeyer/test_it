@@ -119,13 +119,13 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
         'before all': function(){ calls.push('extension1 before all'); },
         'before each': function(){ calls.push('extension1 before each'); },
         'after all': function(){ calls.push('extension1 after all'); },
-        'after each': function(){ calls.push('extension1 after each'); },
+        'after each': function(){ calls.push('extension1 after each'); }
       };
       var extension2 = {
         'before all': function(){ calls.push('extension2 before all'); },
         'before each': function(){ calls.push('extension2 before each'); },
         'after all': function(){ calls.push('extension2 after all'); },
-        'after each': function(){ calls.push('extension2 after each'); },
+        'after each': function(){ calls.push('extension2 after each'); }
       };
       TestIt('testing', {
         'before all': function(){ calls.push('before all'); },
@@ -133,7 +133,7 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
         'after all': function(){ calls.push('after all'); },
         'after each': function(){ calls.push('after each'); },
         'test something': function(){ calls.push('test something'); },
-        'test something else': function(){ calls.push('test something else'); },
+        'test something else': function(){ calls.push('test something else'); }
       }, extension1, extension2, fakeTestItReporter);
     },
     'should include before/after all/each': function(t){

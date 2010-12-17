@@ -253,6 +253,12 @@
   };
 
 // Helpers
+  var indexOf = function(array, el){
+    for(var i=0,e;e=array[i];i++){
+      if (e === el){ return i; }
+    }
+    return -1;
+  };
   T.isEqual = function(expected, actual){
     return T.inspect(expected) === T.inspect(actual);
   };
@@ -260,7 +266,7 @@
     if (subject === undefined) { return 'undefined'; }
     if (subject === null) { return 'null'; }
     stack = stack || [];
-    if (stack.indexOf(subject) !== -1){
+    if (indexOf(stack, subject) !== -1){
       return '<recursive>';
     }
     switch(subject.constructor){
