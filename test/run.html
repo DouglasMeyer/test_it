@@ -111,7 +111,7 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 })();
 
 (function(){
-  var calls = [];
+  var results, calls = [];
 
   TestIt('extensions', {
     'before all': function(t){
@@ -127,7 +127,7 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
         'after all': function(){ calls.push('extension2 after all'); },
         'after each': function(){ calls.push('extension2 after each'); }
       };
-      TestIt('testing', {
+      results = TestIt('testing', {
         'before all': function(){ calls.push('before all'); },
         'before each': function(){ calls.push('before each'); },
         'after all': function(){ calls.push('after all'); },
@@ -163,6 +163,15 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
         'extension1 after all'
       ];
       t.assertEqual(expected, calls);
+    },
+    'should not change results': function(t){
+      var keys;
+
+      keys = [];
+      for (var key in results){ keys.push(key); }
+      t.assertEqual(['testing'], keys);
+
+      t.assert(results['testing']['test something']);
     }
   });
 })();

@@ -1,6 +1,6 @@
 (function(global){
 
-  var T = global.TestIt = function(name, tests){
+  var T = global.TestIt = function(contextName, tests){
     var options = Array.prototype.slice.call(arguments, 2);
     var reporter = T.Reporter;
     if (options.length > 0 && options[options.length-1].constructor === Function){
@@ -14,7 +14,7 @@
       }
     }
     var results = {};
-    results[name] = new T.Context(tests);
+    results[contextName] = new T.Context(tests);
     new reporter(results);
     return results;
   };
@@ -59,7 +59,12 @@
         if (typeof(test) === 'function') {
           results[testName] = new T.Runner(before, test, after);
         } else {
-          results[testName] = new T.Context(test, before, after);
+          var result = new T.Context(test, before, after);
+          if (testName === '') {
+            results = result;
+          } else {
+            results[testName] = result;
+          }
         }
       }
       T.waitFor(function(){
