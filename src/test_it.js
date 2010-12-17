@@ -231,7 +231,7 @@
               html += ': '+result.message;
             }
             html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            li.innerHTML = html;
+            li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             li.className = result.result;
           });
         })();
@@ -249,18 +249,18 @@
     if (subject === undefined) { return 'undefined'; }
     if (subject === null) { return 'null'; }
     stack = stack || [];
-    stack.push(subject);
+    if (stack.indexOf(subject) !== -1){
+      return '<recursive>';
+    }
     switch(subject.constructor){
     case String: return '"'+subject+'"';
     case Array:
       var output='[', first=true;
       for(var e in subject){
         if (!first){ output += ','; }
-        if (stack.indexOf(subject[e]) === -1){
-          output += T.inspect(subject[e], stack);
-        } else {
-          output += '<recursive>';
-        }
+        var newStack = stack.concat();
+        newStack.push(subject);
+        output += T.inspect(subject[e], newStack);
         first = false;
       }
       return output+']';
@@ -268,11 +268,9 @@
       var output = '{', first=true;
       for(var e in subject){
         if (!first){ output += ','; }
-        if (stack.indexOf(subject[e]) === -1){
-          output += e+':'+T.inspect(subject[e], stack);
-        } else {
-          output += e+':<recursive>';
-        }
+        var newStack = stack.concat();
+        newStack.push(subject);
+        output += e+':'+T.inspect(subject[e], newStack);
         first = false;
       }
       return output+'}';
