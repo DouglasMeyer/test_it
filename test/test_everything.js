@@ -395,31 +395,6 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 })();
 
 (function(){
-  var count=0;
-  TestIt('reporting', {
-    'before all': function(){
-      TestIt('tests', {
-        '1 test': function(t){ t.assert(true); },
-        '2 test': function(t){ t.assert(false, 'fail message'); },
-        '3 test': function(t){ throw 'out'; }
-      }, fakeTestItReporter);
-    },
-    'should report passing tests': function(t){
-      t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['innerHTML']);
-      t.assertEqual('pass', log[0]['className']);
-    },
-    'should report failing tests': function(t){
-      t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['innerHTML']);
-      t.assertEqual('fail', log[1]['className']);
-    },
-    'should report erroring tests': function(t){
-      t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
-      t.assertEqual('error', log[2]['className']);
-    }
-  });
-})();
-
-(function(){
   var isEqualTests = function(input){
     var tests = {};
     while(input.length >= 3){
@@ -486,9 +461,11 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 
 (function(){
   var waitForCallbackCalled = false,
-      start = new Date();
+      start = new Date(),
+      arg;
 
-  TestIt.waitFor(function(){
+  TestIt.waitFor(function(time){
+    arg = time;
     return (new Date()) - start > 500;
   }, function(){
     waitForCallbackCalled = true;
@@ -497,6 +474,9 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     TestIt('TestIt.waitFor', {
       'should have waited for condition, then ran callback': function(t){
         t.assert(waitForCallbackCalled);
+      },
+      'should pass-in the time elapsed': function(t){
+        t.assert(arg > 500);
       }
     });
   }, 1000);

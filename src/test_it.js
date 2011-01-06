@@ -161,13 +161,23 @@
 
 // NodeReporter
   T.NodeReporter = function(results){
-    this.puts = require('sys').puts;
-    var testResults = this.reportContext(results);
-    var reporter = this;
-    T.waitFor(function(){ return reporter.constructor.countWithResult(testResults, 'running') === 0; }, function(){
-      var passCount = reporter.constructor.countWithResult(testResults, 'pass'),
-          failCount = reporter.constructor.countWithResult(testResults, 'fail'),
-          errorCount = reporter.constructor.countWithResult(testResults, 'error');
+    var class = this.constructor;
+    class.puts = class.puts || require('sys').puts;
+    class.displaySummary(this.reportContext(results));
+  };
+  T.NodeReporter.testResults = [];
+  T.NodeReporter.displaySummary = function(results){
+    if (T.isEqual(results, {})){ return; }
+    var class=this;
+    class.testResults.push(results);
+    if (class.interval){ return; }
+    class.interval = setInterval(function(){
+      if (class.countWithResult('running') !== 0) { return; }
+      clearInterval(class.interval);
+      delete class.interval;
+      var passCount = class.countWithResult('pass'),
+          failCount = class.countWithResult('fail'),
+          errorCount = class.countWithResult('error');
       var output;
       if (errorCount){
         output = 'Error! ';
@@ -181,23 +191,30 @@
       if (passCount) { details.push(passCount+' passed'); }
       if (failCount) { details.push(failCount+' failed'); }
       if (errorCount) { details.push(errorCount+' errored'); }
-      reporter.puts(output + details.join(', ') + ')');
-    });
+      class.puts(output + details.join(', ') + ')');
+    }, 200);
   };
-  T.NodeReporter.countWithResult = function(results, result){
+  T.NodeReporter.countWithResult = function(result){
+    var count = 0;
+    for(var i=0,results;results=this.testResults[i];i++){
+      count += this.countContextWithResult(results, result);
+    }
+    return count;
+  };
+  T.NodeReporter.countContextWithResult = function(results, result){
     var count = 0;
     for(var name in results) {
       if (results[name].constructor === String) {
         if (results[name] === result){ count++; }
       } else {
-        count += this.countWithResult(results[name], result);
+        count += this.countContextWithResult(results[name], result);
       }
     }
     return count;
   };
   T.NodeReporter.prototype.reportContext = function(results, contextName){
     contextName = contextName || '';
-    var reporter = this,
+    var class = this.constructor,
         testResults = {};
     for(var name in results){
       if(results[name].assertions) {
@@ -211,7 +228,7 @@
               output += ': '+result.message;
             }
             output += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            reporter.puts(output);
+            class.puts(output);
           });
         })();
       } else {
@@ -363,11 +380,12 @@
     return subject.toString();
   };
   T.waitFor = function(condition, callback){
-    if (condition()){
+    var startTime = new Date();
+    if (condition((new Date()) - startTime)){
       callback();
     } else {
       var interval = setInterval(function(){
-        if (condition()){
+        if (condition((new Date()) - startTime)){
           clearInterval(interval);
           callback();
         }
