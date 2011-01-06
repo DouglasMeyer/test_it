@@ -2,7 +2,7 @@
 
   var T = global.TestIt = function(contextName, tests){
     var options = Array.prototype.slice.call(arguments, 2);
-    var reporter = T.Reporter;
+    var reporter = typeof window === 'undefined' ? T.NodeReporter : T.DomReporter;
     if (options.length > 0 && options[options.length-1].constructor === Function){
       reporter = options.pop();
     }
@@ -159,33 +159,96 @@
   };
   T.Assertions.Failure = function(message){ this.message = message; };
 
-// Reporter
-  T.Reporter = function(results){
-    if (!T.Reporter.log){
-      var log = T.Reporter.log = document.createElement('ul');
-      log.id = T.Reporter.elementId;
+// NodeReporter
+  T.NodeReporter = function(results){
+    this.puts = require('sys').puts;
+    var testResults = this.reportContext(results);
+    var reporter = this;
+    T.waitFor(function(){ return reporter.constructor.countWithResult(testResults, 'running') === 0; }, function(){
+      var passCount = reporter.constructor.countWithResult(testResults, 'pass'),
+          failCount = reporter.constructor.countWithResult(testResults, 'fail'),
+          errorCount = reporter.constructor.countWithResult(testResults, 'error');
+      var output;
+      if (errorCount){
+        output = 'Error! ';
+      } else if (failCount){
+        output = 'Fail. ';
+      } else {
+        output = 'Pass. ';
+      }
+      output += '('+(passCount+failCount+errorCount)+' tests: ';
+      var details = [];
+      if (passCount) { details.push(passCount+' passed'); }
+      if (failCount) { details.push(failCount+' failed'); }
+      if (errorCount) { details.push(errorCount+' errored'); }
+      reporter.puts(output + details.join(', ') + ')');
+    });
+  };
+  T.NodeReporter.countWithResult = function(results, result){
+    var count = 0;
+    for(var name in results) {
+      if (results[name].constructor === String) {
+        if (results[name] === result){ count++; }
+      } else {
+        count += this.countWithResult(results[name], result);
+      }
+    }
+    return count;
+  };
+  T.NodeReporter.prototype.reportContext = function(results, contextName){
+    contextName = contextName || '';
+    var reporter = this,
+        testResults = {};
+    for(var name in results){
+      if(results[name].assertions) {
+        (function(){
+          var result = results[name];
+          testResults[name] = 'running';
+          T.waitFor(function(){ return result.running !== true; }, function(){
+            testResults[name] = result.result;
+            var output = contextName+name+': '+result.result;
+            if (result.result !== 'pass' && result.message) {
+              output += ': '+result.message;
+            }
+            output += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
+            reporter.puts(output);
+          });
+        })();
+      } else {
+        testResults[name] = this.reportContext(results[name], contextName+name+': ');
+      }
+    }
+    return testResults;
+  };
+
+// DomReporter
+  T.DomReporter = function(results){
+    var klass = this.constructor;
+    if (!klass.log){
+      var log = klass.log = document.createElement('ul');
+      log.id = klass.elementId;
       T.waitFor(function(){ return document.body; }, function(){
         document.body.appendChild(log);
       });
-      T.Reporter.summary = document.createElement('li');
-      log.appendChild(T.Reporter.summary);
-      T.Reporter.showPassing = false;
-      T.Reporter.summary.onclick = function(){
-        T.Reporter.showPassing = !T.Reporter.showPassing;
-        log.className = T.Reporter.showPassing ? 'show-passing' : '';
+      klass.summary = document.createElement('li');
+      log.appendChild(klass.summary);
+      klass.showPassing = false;
+      klass.summary.onclick = function(){
+        klass.showPassing = !klass.showPassing;
+        log.className = klass.showPassing ? 'show-passing' : '';
       };
     }
-    var log = T.Reporter.log,
-        summary = T.Reporter.summary;
+    var log = klass.log,
+        summary = klass.summary;
     summary.className = 'summary running';
     summary.innerHTML = "Running...";
     this.reportContext(results);
     var runningCount, passCount, failCount, errorCount;
     var updateSummary = function(){
-      runningCount = T.Reporter.countWithResult('running');
-      passCount = T.Reporter.countWithResult('pass');
-      failCount = T.Reporter.countWithResult('fail');
-      errorCount = T.Reporter.countWithResult('error');
+      runningCount = klass.countWithResult('running');
+      passCount = klass.countWithResult('pass');
+      failCount = klass.countWithResult('fail');
+      errorCount = klass.countWithResult('error');
       var html;
       if (runningCount === 0){
         if (errorCount){
@@ -221,15 +284,15 @@
       }
     });
   };
-  T.Reporter.countWithResult = function(result){
-    var count = 0, tests = T.Reporter.log.getElementsByTagName('li');
+  T.DomReporter.countWithResult = function(result){
+    var count = 0, tests = this.log.getElementsByTagName('li');
     for (var i=1,e;e=tests[i];i++){
       if (e.className === result) { count++; }
     }
     return count;
   };
-  T.Reporter.elementId = 'test-it-results';
-  T.Reporter.prototype.reportContext = function(results, contextName){
+  T.DomReporter.elementId = 'test-it-results';
+  T.DomReporter.prototype.reportContext = function(results, contextName){
     contextName = contextName || '';
     var reporter = this;
     for(var name in results){
@@ -241,7 +304,7 @@
           li.innerHTML = html + 'running...';
           li.className = 'running';
           reporter.constructor.log.appendChild(li);
-          T.waitFor(function(){ return result.running === false; }, function(){
+          T.waitFor(function(){ return result.running !== true; }, function(){
             html += result.result;
             if (result.result !== 'pass' && result.message) {
               html += ': '+result.message;
@@ -312,4 +375,4 @@
     }
   };
 
-})(window);
+})(typeof window === 'undefined' ? exports : window);
