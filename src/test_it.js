@@ -159,25 +159,54 @@
   };
   T.Assertions.Failure = function(message){ this.message = message; };
 
-// NodeReporter
-  T.NodeReporter = function(results){
-    var class = this.constructor;
-    class.puts = class.puts || require('sys').puts;
-    class.displaySummary(this.reportContext(results));
+// Reporting
+  var countWithResult = function(result, context){
+    var count = 0;
+    if (context === undefined) {
+      for(var i=0,testOutput;testOutput=this.testOutputs[i];i++){
+        count += this.countWithResult(result, testOutput);
+      }
+    } else {
+      for(var name in context){
+        if(result === 'running' && context[name].running){
+          count++;
+        } else {
+          if(context[name].result !== undefined) {
+            if(context[name].result === result){ count++; }
+          } else {
+            count += this.countWithResult(result, context[name]);
+          }
+        }
+      }
+    }
+    return count;
   };
-  T.NodeReporter.testResults = [];
-  T.NodeReporter.displaySummary = function(results){
-    if (T.isEqual(results, {})){ return; }
-    var class=this;
-    class.testResults.push(results);
-    if (class.interval){ return; }
-    class.interval = setInterval(function(){
-      if (class.countWithResult('running') !== 0) { return; }
-      clearInterval(class.interval);
-      delete class.interval;
-      var passCount = class.countWithResult('pass'),
-          failCount = class.countWithResult('fail'),
-          errorCount = class.countWithResult('error');
+  T.createReporter = function(initialize){
+    var constructor = function(testOutput){
+      constructor.testOutputs.push(testOutput);
+      initialize.apply(this, arguments);
+    };
+    constructor.testOutputs = [];
+    constructor.countWithResult = countWithResult;
+    return constructor;
+  };
+
+// T.NodeReporter
+  T.NodeReporter = T.createReporter(function(testOutput){
+    this.constructor.puts = this.constructor.puts || require('sys').puts;
+    this.reportContext(testOutput);
+    this.constructor.displaySummary();
+  });
+  T.NodeReporter.displaySummary = function(){
+    var constructor=this;
+    if (constructor.interval){ return; }
+    constructor.interval = setInterval(function(){
+      if (constructor.countWithResult('running') !== 0) { return; }
+      clearInterval(constructor.interval);
+      delete constructor.interval;
+      var passCount = constructor.countWithResult('pass'),
+          failCount = constructor.countWithResult('fail'),
+          errorCount = constructor.countWithResult('error');
       var output;
       if (errorCount){
         output = 'Error! ';
@@ -191,30 +220,12 @@
       if (passCount) { details.push(passCount+' passed'); }
       if (failCount) { details.push(failCount+' failed'); }
       if (errorCount) { details.push(errorCount+' errored'); }
-      class.puts(output + details.join(', ') + ')');
+      constructor.puts(output + details.join(', ') + ')');
     }, 200);
-  };
-  T.NodeReporter.countWithResult = function(result){
-    var count = 0;
-    for(var i=0,results;results=this.testResults[i];i++){
-      count += this.countContextWithResult(results, result);
-    }
-    return count;
-  };
-  T.NodeReporter.countContextWithResult = function(results, result){
-    var count = 0;
-    for(var name in results) {
-      if (results[name].constructor === String) {
-        if (results[name] === result){ count++; }
-      } else {
-        count += this.countContextWithResult(results[name], result);
-      }
-    }
-    return count;
   };
   T.NodeReporter.prototype.reportContext = function(results, contextName){
     contextName = contextName || '';
-    var class = this.constructor,
+    var constructor = this.constructor,
         testResults = {};
     for(var name in results){
       if(results[name].assertions) {
@@ -228,7 +239,7 @@
               output += ': '+result.message;
             }
             output += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            class.puts(output);
+            constructor.puts(output);
           });
         })();
       } else {
@@ -239,33 +250,33 @@
   };
 
 // DomReporter
-  T.DomReporter = function(results){
-    var klass = this.constructor;
-    if (!klass.log){
-      var log = klass.log = document.createElement('ul');
-      log.id = klass.elementId;
+  T.DomReporter = T.createReporter(function(testOutput){
+    var constructor = this.constructor;
+    if (!constructor.log){
+      var log = constructor.log = document.createElement('ul');
+      log.id = constructor.elementId;
       T.waitFor(function(){ return document.body; }, function(){
         document.body.appendChild(log);
       });
-      klass.summary = document.createElement('li');
-      log.appendChild(klass.summary);
-      klass.showPassing = false;
-      klass.summary.onclick = function(){
-        klass.showPassing = !klass.showPassing;
-        log.className = klass.showPassing ? 'show-passing' : '';
+      constructor.summary = document.createElement('li');
+      log.appendChild(constructor.summary);
+      constructor.showPassing = false;
+      constructor.summary.onclick = function(){
+        constructor.showPassing = !constructor.showPassing;
+        log.className = constructor.showPassing ? 'show-passing' : '';
       };
     }
-    var log = klass.log,
-        summary = klass.summary;
+    var log = constructor.log,
+        summary = constructor.summary;
     summary.className = 'summary running';
     summary.innerHTML = "Running...";
-    this.reportContext(results);
+    this.reportContext(testOutput);
     var runningCount, passCount, failCount, errorCount;
     var updateSummary = function(){
-      runningCount = klass.countWithResult('running');
-      passCount = klass.countWithResult('pass');
-      failCount = klass.countWithResult('fail');
-      errorCount = klass.countWithResult('error');
+      runningCount = constructor.countWithResult('running');
+      passCount = constructor.countWithResult('pass');
+      failCount = constructor.countWithResult('fail');
+      errorCount = constructor.countWithResult('error');
       var html;
       if (runningCount === 0){
         if (errorCount){
@@ -300,22 +311,15 @@
         summary.className = 'summary pass';
       }
     });
-  };
-  T.DomReporter.countWithResult = function(result){
-    var count = 0, tests = this.log.getElementsByTagName('li');
-    for (var i=1,e;e=tests[i];i++){
-      if (e.className === result) { count++; }
-    }
-    return count;
-  };
+  });
   T.DomReporter.elementId = 'test-it-results';
-  T.DomReporter.prototype.reportContext = function(results, contextName){
+  T.DomReporter.prototype.reportContext = function(testOutput, contextName){
     contextName = contextName || '';
     var reporter = this;
-    for(var name in results){
-      if(results[name].assertions) {
+    for(var name in testOutput){
+      if(testOutput[name].assertions) {
         (function(){
-          var result = results[name],
+          var result = testOutput[name],
               li = document.createElement('li'),
               html = contextName+name+': ';
           li.innerHTML = html + 'running...';
@@ -332,7 +336,7 @@
           });
         })();
       } else {
-        this.reportContext(results[name], contextName+name+': ');
+        this.reportContext(testOutput[name], contextName+name+': ');
       }
     }
   };
