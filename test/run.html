@@ -488,9 +488,11 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 
 (function(){
   var waitForCallbackCalled = false,
-      start = new Date();
+      start = new Date(),
+      arg;
 
-  TestIt.waitFor(function(){
+  TestIt.waitFor(function(time){
+    arg = time;
     return (new Date()) - start > 500;
   }, function(){
     waitForCallbackCalled = true;
@@ -499,6 +501,9 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     TestIt('TestIt.waitFor', {
       'should have waited for condition, then ran callback': function(t){
         t.assert(waitForCallbackCalled);
+      },
+      'should pass-in the time elapsed': function(t){
+        t.assert(arg > 500);
       }
     });
   }, 1000);

@@ -300,11 +300,12 @@
     return subject.toString();
   };
   T.waitFor = function(condition, callback){
-    if (condition()){
+    var startTime = new Date();
+    if (condition((new Date()) - startTime)){
       callback();
     } else {
       var interval = setInterval(function(){
-        if (condition()){
+        if (condition((new Date()) - startTime)){
           clearInterval(interval);
           callback();
         }
