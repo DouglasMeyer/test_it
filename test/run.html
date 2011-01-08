@@ -417,6 +417,17 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
     'should report erroring tests': function(t){
       t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
       t.assertEqual('error', log[2]['className']);
+    },
+    'should wait for context to finish before reporting': function(t){
+      var beforeAllShouldWait = true;
+      TestIt('tests', {
+        'before all': function(t){
+          t.waitFor(function(){ return !beforeAllShouldWait; }, function(){});
+        },
+        '1 test': function(t){ t.assert(true); }
+      }, fakeTestItReporter);
+      t.assert(log[0] === undefined);
+      beforeAllShouldWait = false;
     }
   });
 })();
@@ -510,14 +521,14 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
 })();
 
 (function(){
-  var calls, counter, start,
-      isDone = function(){ return counter === 100 || (new Date()) - start > 3000; };
   TestIt('t.waitFor', {
-    'before all': function(){
-      calls = [];
-      counter = 0;
-      steps = ['before all', 'before each', 'test', 'after each', 'after all'];
-      tests = {};
+    'should delay each call until the callbacks are called': function(t){
+      var calls = [],
+          counter = 0,
+          start,
+          isDone = function(){ return counter === 100 || (new Date()) - start > 3000; },
+          steps = ['before all', 'before each', 'test', 'after each', 'after all'],
+          tests = {};
       for (var i=0,n; s=steps[i]; i++){
         (function(index, step){
           tests[step] = function(t){
@@ -532,8 +543,6 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
       };
       start = new Date();
       TestIt('tests', tests, fakeTestItReporter);
-    },
-    'should delay each call until the callbacks are called': function(t){
       t.waitFor(isDone, function(){
         var expected = [
           'before all', 'before all callback',
@@ -544,6 +553,23 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
         ];
         t.assertEqual(expected, calls);
       });
+    },
+    'in "before all"': {
+      'should mark the context as running': function(t){
+        var callbackCalled = false,
+            results = TestIt('tests', {
+              'before all': function(t){
+                t.waitFor(function(time){ return time > 100; }, function(){
+                  callbackCalled = true;
+                });
+              },
+              'a test': function(){}
+            }, fakeTestItReporter);
+        t.assert(results['tests'].running);
+        t.waitFor(function(time){ return callbackCalled; }, function(){
+          t.assert(!results['tests'].running)
+        });
+      }
     }
   });
 })();

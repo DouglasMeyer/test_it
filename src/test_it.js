@@ -41,6 +41,7 @@
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
     try {
+      results.running = true;
       results['before all'] = { };
       assertions = new T.Assertions(results['before all']);
       beforeAll(assertions);
@@ -54,6 +55,7 @@
     T.waitFor(function(){
       return assertions === undefined || assertions.waitForCount === 0;
     }, function(){
+      delete results.running;
       for(var testName in tests){
         var test = tests[testName];
         if (typeof(test) === 'function') {
@@ -231,30 +233,46 @@
   T.Reporter.elementId = 'test-it-results';
   T.Reporter.prototype.reportContext = function(results, contextName){
     contextName = contextName || '';
-    var reporter = this;
-    for(var name in results){
-      if(results[name].assertions) {
-        (function(){
-          var result = results[name],
-              li = document.createElement('li'),
-              html = contextName+name+': ';
-          li.innerHTML = html + 'running...';
+    var li, reporter = this;
+    T.waitFor(function(){
+      if (results.running){
+        if (li === undefined){
+          li = document.createElement('li');
+          li.innerHTML = contextName+'running...';
           li.className = 'running';
           reporter.constructor.log.appendChild(li);
-          T.waitFor(function(){ return result.running === false; }, function(){
-            html += result.result;
-            if (result.result !== 'pass' && result.message) {
-              html += ': '+result.message;
-            }
-            html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            li.className = result.result;
-          });
-        })();
+        }
       } else {
-        this.reportContext(results[name], contextName+name+': ');
+        if (li){
+          reporter.constructor.log.removeChild(li);
+        }
       }
-    }
+      return results.running !== true;
+    }, function(){
+      for(var name in results){
+        if(results[name].assertions) {
+          (function(){
+            var result = results[name],
+                li = document.createElement('li'),
+                html = contextName+name+': ';
+            li.innerHTML = html + 'running...';
+            li.className = 'running';
+            reporter.constructor.log.appendChild(li);
+            T.waitFor(function(){ return result.running === false; }, function(){
+              html += result.result;
+              if (result.result !== 'pass' && result.message) {
+                html += ': '+result.message;
+              }
+              html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
+              li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              li.className = result.result;
+            });
+          })();
+        } else {
+          reporter.reportContext(results[name], contextName+name+': ');
+        }
+      }
+    });
   };
 
 // Helpers
