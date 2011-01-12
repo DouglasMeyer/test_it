@@ -266,12 +266,17 @@
         log.className = constructor.showPassing ? 'show-passing' : '';
       };
     }
-    var log = constructor.log,
-        summary = constructor.summary;
-    summary.className = 'summary running';
-    summary.innerHTML = "Running...";
+    constructor.summary.className = 'summary running';
+    constructor.summary.innerHTML = "Running...";
     this.reportContext(testOutput);
-    var runningCount, passCount, failCount, errorCount;
+    this.constructor.displaySummary();
+  });
+  T.DomReporter.elementId = 'test-it-results';
+  T.DomReporter.displaySummary = function(){
+    var constructor = this,
+        log = constructor.log,
+        summary = constructor.summary,
+        runningCount, passCount, failCount, errorCount;
     var updateSummary = function(){
       runningCount = constructor.countWithResult('running');
       passCount = constructor.countWithResult('pass');
@@ -297,12 +302,11 @@
       if (errorCount) { details.push(errorCount+' errored'); }
       html += details.join(', ');
       summary.innerHTML = html+')</small>';
-      return runningCount === 0;
     };
     T.waitFor(function(){
-      return updateSummary();
-    }, function(){
       updateSummary();
+      return runningCount === 0;
+    }, function(){
       if (errorCount) {
         summary.className = 'summary error';
       } else if (failCount) {
@@ -311,8 +315,7 @@
         summary.className = 'summary pass';
       }
     });
-  });
-  T.DomReporter.elementId = 'test-it-results';
+  };
   T.DomReporter.prototype.reportContext = function(testOutput, contextName){
     contextName = contextName || '';
     var reporter = this;
