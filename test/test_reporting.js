@@ -14,16 +14,6 @@ if (typeof TestIt === 'undefined'){
   };
 }
 
-var log,
-    fakeTestItReporter = function(results){
-      log = this.constructor.log = [];
-      log.appendChild = log.push;
-      this.reportContext(results);
-      return results;
-    };
-fakeTestItReporter.prototype = new TestIt.DomReporter({});
-fakeTestItReporter.prototype.constructor = fakeTestItReporter;
-
 (function(){
   TestIt('TestIt.createReporter', {
     'should return a constructor': function(t){
@@ -73,37 +63,38 @@ fakeTestItReporter.prototype.constructor = fakeTestItReporter;
               testOutput = { results: true };
           new con(testOutput);
           t.assertEqual([testOutput], con.testOutputs);
+        },
+        '.reportContext': {
+          'should call reportTest for every test': function(t){
+            var con = TestIt.createReporter(function(){});
+            var expected = [
+              ['the tests: a test', { assertions: [], running: true }],
+              ['the tests: another test', { assertions: [], result: 'fail' }],
+              ['the tests: a context: something', { assertions: [], result: 'pass' }],
+              ['the tests: yet another test', { assertions: [], running: true }]
+            ];
+            t.mock(con.prototype, 'reportTest', 4, function(name, testOutput){
+              t.assertEqual(expected.shift(), [name, testOutput]);
+            });
+            var testOutput = {
+              'the tests': {
+                'a test': { assertions: [], running: true },
+                'another test': { assertions: [], result: 'fail' },
+                'a context': {
+                  'something': { assertions: [], result: 'pass' }
+                },
+                'yet another test': { assertions: [], running: true },
+              }
+            };
+            var instance = new con(testOutput);
+            instance.reportContext(testOutput);
+          }
         }
       }
     }
-  });
+  }, MockIt);
 
 })();
-
-//(function(){
-//  var count=0;
-//  TestIt('reporting', {
-//    'before all': function(){
-//      TestIt('tests', {
-//        '1 test': function(t){ t.assert(true); },
-//        '2 test': function(t){ t.assert(false, 'fail message'); },
-//        '3 test': function(t){ throw 'out'; }
-//      }, fakeTestItReporter);
-//    },
-//    'should report passing tests': function(t){
-//      t.assertEqual('tests: 1 test: pass (1 assertion run)', log[0]['innerHTML']);
-//      t.assertEqual('pass', log[0]['className']);
-//    },
-//    'should report failing tests': function(t){
-//      t.assertEqual('tests: 2 test: fail: fail message (1 assertion run)', log[1]['innerHTML']);
-//      t.assertEqual('fail', log[1]['className']);
-//    },
-//    'should report erroring tests': function(t){
-//      t.assertEqual('tests: 3 test: error: out (0 assertions run)', log[2]['innerHTML']);
-//      t.assertEqual('error', log[2]['className']);
-//    }
-//  });
-//})();
 
 (function(){
   TestIt('TestIt.NodeReporter', {

@@ -181,6 +181,16 @@
     }
     return count;
   };
+  var reportContext = function(testOutput, contextName){
+    contextName = contextName || '';
+    for(var name in testOutput){
+      if(testOutput[name].assertions){
+        this.reportTest(contextName+name, testOutput[name]);
+      }else{
+        this.reportContext(testOutput[name], contextName+name+': ');
+      }
+    }
+  };
   T.createReporter = function(initialize){
     var constructor = function(testOutput){
       constructor.testOutputs.push(testOutput);
@@ -188,6 +198,7 @@
     };
     constructor.testOutputs = [];
     constructor.countWithResult = countWithResult;
+    constructor.prototype.reportContext = reportContext;
     return constructor;
   };
 
@@ -223,30 +234,16 @@
       constructor.puts(output + details.join(', ') + ')');
     }, 200);
   };
-  T.NodeReporter.prototype.reportContext = function(results, contextName){
-    contextName = contextName || '';
-    var constructor = this.constructor,
-        testResults = {};
-    for(var name in results){
-      if(results[name].assertions) {
-        (function(){
-          var result = results[name];
-          testResults[name] = 'running';
-          T.waitFor(function(){ return result.running !== true; }, function(){
-            testResults[name] = result.result;
-            var output = contextName+name+': '+result.result;
-            if (result.result !== 'pass' && result.message) {
-              output += ': '+result.message;
-            }
-            output += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            constructor.puts(output);
-          });
-        })();
-      } else {
-        testResults[name] = this.reportContext(results[name], contextName+name+': ');
+  T.NodeReporter.prototype.reportTest = function(name, testOutput){
+    var constructor = this.constructor;
+    T.waitFor(function(){ return testOutput.running !== true; }, function(){
+      var output = name+': '+testOutput.result;
+      if (testOutput.result !== 'pass' && testOutput.message) {
+        output += ': '+testOutput.message;
       }
-    }
-    return testResults;
+      output += ' ('+testOutput.assertions.length+' assertion'+(testOutput.assertions.length === 1 ? '' : 's')+' run)';
+      constructor.puts(output);
+    });
   };
 
 // DomReporter
@@ -316,32 +313,22 @@
       }
     });
   };
-  T.DomReporter.prototype.reportContext = function(testOutput, contextName){
-    contextName = contextName || '';
-    var reporter = this;
-    for(var name in testOutput){
-      if(testOutput[name].assertions) {
-        (function(){
-          var result = testOutput[name],
-              li = document.createElement('li'),
-              html = contextName+name+': ';
-          li.innerHTML = html + 'running...';
-          li.className = 'running';
-          reporter.constructor.log.appendChild(li);
-          T.waitFor(function(){ return result.running !== true; }, function(){
-            html += result.result;
-            if (result.result !== 'pass' && result.message) {
-              html += ': '+result.message;
-            }
-            html += ' ('+result.assertions.length+' assertion'+(result.assertions.length === 1 ? '' : 's')+' run)';
-            li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            li.className = result.result;
-          });
-        })();
-      } else {
-        this.reportContext(testOutput[name], contextName+name+': ');
+  T.DomReporter.prototype.reportTest = function(name, testOutput){
+    var constructor = this.constructor,
+        li = document.createElement('li'),
+        html = name+': ';
+    li.innerHTML = html + 'running...';
+    li.className = 'running';
+    constructor.log.appendChild(li);
+    T.waitFor(function(){ return testOutput.running !== true; }, function(){
+      html += testOutput.result;
+      if (testOutput.result !== 'pass' && testOutput.message) {
+        html += ': '+testOutput.message;
       }
-    }
+      html += ' ('+testOutput.assertions.length+' assertion'+(testOutput.assertions.length === 1 ? '' : 's')+' run)';
+      li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      li.className = testOutput.result;
+    });
   };
 
 // Helpers
