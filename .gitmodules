@@ -1,0 +1,3 @@
+[submodule "test/lib/mock_it"]
+	path = test/lib/mock_it
+	url = git://github.com/DouglasMeyer/mock_it.git
