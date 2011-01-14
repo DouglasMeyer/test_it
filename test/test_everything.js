@@ -1,6 +1,7 @@
-var TestIt;
 if (typeof TestIt === 'undefined'){
   TestIt = require('./../src/test_it').TestIt;
+}
+if (typeof document === 'undefined'){
   var element = {
     appendChild: function(){},
     getElementsByTagName: function(){ return []; }

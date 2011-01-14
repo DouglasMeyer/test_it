@@ -1,7 +1,10 @@
-var TestIt, MockIt;
 if (typeof TestIt === 'undefined'){
   TestIt = require('./../src/test_it').TestIt;
+}
+if (typeof MockIt === 'undefined'){
   MockIt = require('./lib/mock_it/src/mock_it').MockIt;
+}
+if (typeof document === 'undefined'){
   var element = {
     appendChild: function(){},
     getElementsByTagName: function(){ return []; }

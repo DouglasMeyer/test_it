@@ -344,25 +344,27 @@
     return T.inspect(expected) === T.inspect(actual);
   };
   T.inspect = function(subject, stack){
-    if (subject === undefined) { return 'undefined'; }
-    if (subject === null) { return 'null'; }
     stack = stack || [];
     if (indexOf(stack, subject) !== -1){
       return '<recursive>';
     }
-    switch(subject.constructor){
-    case String: return '"'+subject+'"';
-    case Array:
-      var output='[', first=true;
-      for(var e in subject){
-        if (!first){ output += ','; }
-        var newStack = stack.concat();
-        newStack.push(subject);
-        output += T.inspect(subject[e], newStack);
-        first = false;
+    switch(typeof(subject)){
+    case 'undefined': return 'undefined';
+    case 'string':    return '"'+subject+'"';
+    case 'object':
+      if (subject === null) {
+        return 'null';
+      } else if (subject.constructor === Array) {
+        var output='[', first=true;
+        for(var e in subject){
+          if (!first){ output += ','; }
+          var newStack = stack.concat();
+          newStack.push(subject);
+          output += T.inspect(subject[e], newStack);
+          first = false;
+        }
+        return output+']';
       }
-      return output+']';
-    case Object:
       var output = '{', first=true;
       for(var e in subject){
         if (!first){ output += ','; }
