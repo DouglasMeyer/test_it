@@ -146,14 +146,14 @@
     });
   };
   T.Assertions.prototype.assert = function(assertion, message){
-    this.length = this.length + 1;
+    this.length++;
     if (!assertion) {
       if (message === undefined) { message = assertion+" is not true"; }
       throw new T.Assertions.Failure(message);
     }
   };
   T.Assertions.prototype.assertEqual = function(expected, actual, message){
-    this.length = this.length + 1;
+    this.length++;
     if (!T.isEqual(expected, actual)) {
       if (message === undefined) { message = "expected "+T.inspect(expected)+" but was "+T.inspect(actual); }
       throw new T.Assertions.Failure(message);
