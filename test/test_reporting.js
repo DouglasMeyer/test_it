@@ -25,7 +25,7 @@ if (typeof document === 'undefined'){
       var x = new con({});
       t.assert(x instanceof con);
     },
-    'constructor': {
+    'the constructor': {
       'should have [] assigned to testOutputs': function(t){
         var con = TestIt.createReporter(function(){});
         t.assertEqual([], con.testOutputs);
@@ -40,7 +40,7 @@ if (typeof document === 'undefined'){
               'a context': {
                 'something': { assertions: [], result: 'pass' }
               },
-              'yet another test': { assertions: [], result: 'error' },
+              'yet another test': { assertions: [], result: 'error' }
             }
           }];
           t.assertEqual(2, con.countWithResult('pass'));
@@ -54,7 +54,7 @@ if (typeof document === 'undefined'){
               'a context': {
                 running: true
               },
-              'yet another test': { assertions: [], running: true },
+              'yet another test': { assertions: [], running: true }
             }
           }];
           t.assertEqual(3, con.countWithResult('running'));
@@ -86,7 +86,7 @@ if (typeof document === 'undefined'){
                 'a context': {
                   'something': { assertions: [], result: 'pass' }
                 },
-                'yet another test': { assertions: [], running: true },
+                'yet another test': { assertions: [], running: true }
               }
             };
             var instance = new con(testOutput);
