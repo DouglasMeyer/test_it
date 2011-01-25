@@ -210,6 +210,8 @@
     this.reportContext(testOutput);
     this.constructor.displaySummary();
   });
+  T.NodeReporter.color_red   = '\033[31m';
+  T.NodeReporter.reset_color = '\033[39m';
   T.NodeReporter.displaySummary = function(){
     var constructor=this;
     if (constructor.interval){ return; }
@@ -220,10 +222,14 @@
       var passCount = constructor.countWithResult('pass'),
           failCount = constructor.countWithResult('fail'),
           errorCount = constructor.countWithResult('error');
-      var output;
+      var output, prefix = '', suffix = '';
       if (errorCount){
+        prefix = constructor.color_red;
+        suffix = constructor.reset_color;
         output = 'Error! ';
       } else if (failCount){
+        prefix = constructor.color_red;
+        suffix = constructor.reset_color;
         output = 'Fail. ';
       } else {
         output = 'Pass. ';
@@ -233,18 +239,24 @@
       if (passCount) { details.push(passCount+' passed'); }
       if (failCount) { details.push(failCount+' failed'); }
       if (errorCount) { details.push(errorCount+' errored'); }
-      constructor.puts(output + details.join(', ') + ')');
+      constructor.puts(prefix + output + details.join(', ') + ')' + suffix);
     }, 200);
   };
   T.NodeReporter.prototype.reportTest = function(name, testOutput){
     var constructor = this.constructor;
     T.waitFor(function(){ return testOutput.running !== true; }, function(){
-      var output = name+': '+testOutput.result;
-      if (testOutput.result !== 'pass' && testOutput.message) {
-        output += ': '+testOutput.message;
+      var output = name+': '+testOutput.result,
+          prefix = '',
+          suffix = '';
+      if (testOutput.result !== 'pass'){
+        prefix = constructor.color_red;
+        suffix = constructor.reset_color;
+        if (testOutput.message) {
+          output += ': '+testOutput.message;
+        }
       }
       output += ' ('+testOutput.assertions.length+' assertion'+(testOutput.assertions.length === 1 ? '' : 's')+' run)';
-      constructor.puts(output);
+      constructor.puts(prefix+output+suffix);
     });
   };
 

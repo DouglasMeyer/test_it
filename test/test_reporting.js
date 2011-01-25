@@ -100,41 +100,70 @@ if (typeof document === 'undefined'){
 })();
 
 (function(){
+
+  var createTestSafeNodeReporter = function(){
+    var reporter = function(testOutput){
+          this.constructor.testOutputs.push(testOutput);
+          this.reportContext(testOutput);
+          this.constructor.displaySummary();
+        };
+    (function(origPuts, origDisplaySummary){
+      TestIt.NodeReporter.puts = function(){};
+      TestIt.NodeReporter.displaySummary = function(){};
+      reporter.prototype = new TestIt.NodeReporter({});
+      TestIt.NodeReporter.puts = origPuts;
+      TestIt.NodeReporter.displaySummary = origDisplaySummary;
+    })(TestIt.NodeReporter.puts, TestIt.NodeReporter.displaySummary);
+    reporter.prototype.constructor = reporter;
+    for(var name in TestIt.NodeReporter){
+      reporter[name] = TestIt.NodeReporter[name];
+    }
+    reporter.puts = function(output){ reporter.lastPuts = output; };
+    reporter.testOutputs = [];
+    delete reporter.interval;
+    return reporter;
+  };
+
   TestIt('TestIt.NodeReporter', {
     'should show one summary for all tests': function(t){
-      var lastPuts,
-          NodeReporter2 = function(testOutput){
-            this.constructor.testOutputs.push(testOutput);
-            this.reportContext(testOutput);
-            this.constructor.displaySummary();
-          };
-      (function(origPuts, origDisplaySummary){
-        TestIt.NodeReporter.puts = function(){};
-        TestIt.NodeReporter.displaySummary = function(){};
-        NodeReporter2.prototype = new TestIt.NodeReporter({});
-        TestIt.NodeReporter.puts = origPuts;
-        TestIt.NodeReporter.displaySummary = origDisplaySummary;
-      })(TestIt.NodeReporter.puts, TestIt.NodeReporter.displaySummary);
-      NodeReporter2.prototype.constructor = NodeReporter2;
-      for(var name in TestIt.NodeReporter){
-        NodeReporter2[name] = TestIt.NodeReporter[name];
-      }
-      NodeReporter2.puts = function(output){ lastPuts = output; };
-      NodeReporter2.testOutputs = [];
-      delete NodeReporter2.interval;
-      new NodeReporter2({
+      var NodeReporter = createTestSafeNodeReporter();
+      new NodeReporter({
         'tests': {
           'passing test': { assertions: [], result: 'pass' }
         }
       });
-      t.assertEqual('tests: passing test: pass (0 assertions run)', lastPuts);
-      new NodeReporter2({
+      t.assertEqual('tests: passing test: pass (0 assertions run)', NodeReporter.lastPuts);
+      new NodeReporter({
         'more tests': {
           'failing test': { assertions: [], result: 'fail' }
         }
       });
       t.waitFor(function(time){ return time > 400; }, function(){
-        t.assertEqual('Fail. (2 tests: 1 passed, 1 failed)', lastPuts);
+        t.assertEqual('Fail. (2 tests: 1 passed, 1 failed)', NodeReporter.lastPuts.replace(/\033\[..m/g, ''));
+      });
+    },
+    'should color failed tests red': function(t){
+      var NodeReporter = createTestSafeNodeReporter();
+      new NodeReporter({
+        'tests': {
+          'failing test': { assertions: [], result: 'fail' }
+        }
+      });
+      t.assertEqual('\033[31mtests: failing test: fail (0 assertions run)\033[39m', NodeReporter.lastPuts);
+      t.waitFor(function(time){ return time > 400; }, function(){
+        t.assertEqual('\033[31mFail. (1 tests: 1 failed)\033[39m', NodeReporter.lastPuts);
+      });
+    },
+    'should color errored tests red': function(t){
+      var NodeReporter = createTestSafeNodeReporter();
+      new NodeReporter({
+        'tests': {
+          'erroring test': { assertions: [], result: 'error' }
+        }
+      });
+      t.assertEqual('\033[31mtests: erroring test: error (0 assertions run)\033[39m', NodeReporter.lastPuts);
+      t.waitFor(function(time){ return time > 400; }, function(){
+        t.assertEqual('\033[31mError! (1 tests: 1 errored)\033[39m', NodeReporter.lastPuts);
       });
     }
   }, MockIt);
