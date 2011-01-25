@@ -209,6 +209,7 @@
     this.constructor.puts = this.constructor.puts || require('sys').puts;
     this.reportContext(testOutput);
     this.constructor.displaySummary();
+    this.constructor.exit = process.exit;
   });
   T.NodeReporter.color_red   = '\033[31m';
   T.NodeReporter.reset_color = '\033[39m';
@@ -240,6 +241,7 @@
       if (failCount) { details.push(failCount+' failed'); }
       if (errorCount) { details.push(errorCount+' errored'); }
       constructor.puts(prefix + output + details.join(', ') + ')' + suffix);
+      constructor.exit((failCount + errorCount) === 0 ? 0 : 1)
     }, 200);
   };
   T.NodeReporter.prototype.reportTest = function(name, testOutput){

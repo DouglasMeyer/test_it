@@ -16,6 +16,9 @@ if (typeof document === 'undefined'){
     }
   };
 }
+if (typeof process === 'undefined'){
+  process = {};
+}
 
 (function(){
   TestIt('TestIt.createReporter', {
@@ -119,6 +122,7 @@ if (typeof document === 'undefined'){
       reporter[name] = TestIt.NodeReporter[name];
     }
     reporter.puts = function(output){ reporter.lastPuts = output; };
+    reporter.exit = function(){};
     reporter.testOutputs = [];
     delete reporter.interval;
     return reporter;
@@ -165,6 +169,18 @@ if (typeof document === 'undefined'){
       t.waitFor(function(time){ return time > 400; }, function(){
         t.assertEqual('\033[31mError! (1 tests: 1 errored)\033[39m', NodeReporter.lastPuts);
       });
+    },
+    'should exit with 1 if there are errors or failures': function(t){
+      var NodeReporter = createTestSafeNodeReporter();
+      t.mock(NodeReporter, 'exit', 1, function(code){
+        t.assertEqual(1, code);
+      });
+      new NodeReporter({
+        'tests': {
+          'erroring test': { assertions: [], result: 'error' }
+        }
+      });
+      t.waitFor(function(time){ return time > 400; }, function(){ });
     }
   }, MockIt);
 })();
