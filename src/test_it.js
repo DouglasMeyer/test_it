@@ -211,18 +211,18 @@
       error: 0
     };
     var timeout = reporter.timeout;
-    var runningTests = reporter.runningTests || [];
-    if (status === 'running' && runningTests.indexOf(testName) === -1){
-      runningTests.push(testName);
+    reporter.runningTests = reporter.runningTests || [];
+    if (status === 'running' && reporter.runningTests.indexOf(testName) === -1){
+      reporter.runningTests.push(testName);
     }
-    if (status !== 'running' && runningTests.indexOf(testName) !== -1){
+    if (status !== 'running' && reporter.runningTests.indexOf(testName) !== -1){
       var newList = [];
-      for (var i=0,n;n=runningTests[i];i++){
+      for (var i=0,n;n=reporter.runningTests[i];i++){
         if (n !== testName){
           newList.push(n);
         }
       }
-      runningTests = reporter.runningTests = newList;
+      reporter.runningTests = newList;
     }
 
     if (status !== 'running' && status !== 'done'){
@@ -239,7 +239,7 @@
       clearTimeout(timeout);
       delete timeout;
     }
-    if (runningTests.length){ return; }
+    if (reporter.runningTests.length){ return; }
     reporter.timeout = setTimeout(function(){
       delete timeout;
 

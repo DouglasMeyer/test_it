@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 if (typeof TestIt === 'undefined'){
   TestIt = require('../src/test_it').TestIt;
 }
