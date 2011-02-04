@@ -2,9 +2,9 @@
 
   var T = global.TestIt = function(contextName, tests){
     var options = Array.prototype.slice.call(arguments, 2);
-    var reporter = typeof window === 'undefined' ? T.NodeReporter : T.DomReporter;
+    var callback = typeof window === 'undefined' ? T.nodeReporter : T.domReporter;
     if (options.length > 0 && options[options.length-1].constructor === Function){
-      reporter = options.pop();
+      callback = options.pop();
     }
     var extension;
     while(extension = options.pop()){
@@ -13,23 +13,20 @@
         tests[name] = extension[name];
       }
     }
-    var results = {};
-    results[contextName] = new T.Context(tests);
-    new reporter(results);
-    return results;
+    //FIXME: change "" to []
+    T.Context(contextName, tests, [], [], callback);
   };
 
-  var reportException = function(result, exception){
+  var reportException = function(name, callback, assertionCount, exception){
     if (exception.constructor === T.Assertions.Failure) {
-      result.result = 'fail';
-      result.message = exception.message;
+      callback(name, 'fail', assertionCount, exception.message);
     } else {
-      result.result = 'error';
-      result.message = exception;
+      callback(name, 'error', assertionCount, exception);
     }
   };
-  T.Context = function(tests, contextBefore, contextAfter){
-    var results = {}, assertions;
+  T.Context = function(contextName, tests, contextBefore, contextAfter, callback){
+    var assertions;
+    //FIXME: this is now redundant
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
     var beforeAll  = tests['before all'] || function(){},
@@ -41,95 +38,134 @@
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
     try {
-      results.running = true;
-      results['before all'] = { };
-      assertions = new T.Assertions(results['before all']);
+      assertions = new T.Assertions();
       beforeAll(assertions);
-      delete results['before all'];
     } catch (e) {
-      results['before all'].assertions = assertions;
-      reportException(results['before all'], e);
+      reportException(contextName+': before all', callback, assertions.length, e);
       afterAll && afterAll(assertions);
-      return results;
+      return;
     }
-    T.waitFor(function(){
-      return assertions === undefined || assertions.waitForCount === 0;
-    }, function(){
-      delete results.running;
+    var noWait = function(){ return assertions === undefined || assertions.waitForCount === 0; },
+        didWait = false;
+    if (!noWait()){
+      didWait = true;
+      callback(contextName, 'running');
+    }
+    T.waitFor(noWait, function(){
+      var originalCallback = callback,
+          runningChildren = [],
+          observeChildren = function(name, status){
+            if (status === 'running' && runningChildren.indexOf(name) === -1){
+              runningChildren.push(name);
+            }
+            if (status !== 'running' && runningChildren.indexOf(name) !== -1){
+              var newList = [];
+              for (var i=0,n;n=runningChildren[i];i++){
+                if (n !== name){
+                  newList.push(n);
+                }
+              }
+              runningChildren = newList;
+            }
+            originalCallback.apply(null, arguments);
+          };
       for(var testName in tests){
         var test = tests[testName];
         if (typeof(test) === 'function') {
-          results[testName] = new T.Runner(before, test, after);
+          new T.Runner(contextName+': '+testName, before, test, after, observeChildren);
         } else {
-          var result = new T.Context(test, before, after);
-          if (testName === '') {
-            results = result;
-          } else {
-            results[testName] = result;
+          var newContextName = contextName;
+          if (testName !== '') {
+            newContextName += ': '+testName;
           }
+          T.Context(newContextName, test, before, after, observeChildren);
         }
       }
       T.waitFor(function(){
-        for(var name in results){
-          if (results[name].running === true){ return false; }
-        }
-        return true;
+        return runningChildren.length === 0;
       }, function(){
         try {
-          results['after all'] = { };
-          assertions = new T.Assertions(results['after all']);
+          assertions = new T.Assertions();
           afterAll(assertions);
-          delete results['after all'];
         } catch (e) {
-          results['after all'].assertions = assertions;
-          reportException(results['after all'], e);
+          reportException(contextName+': after all', callback, assertions.length, e);
         }
+
+//FIXME: test this in reporting
+        if (!noWait()){
+          didWait = true;
+          callback(contextName, 'running');
+        }
+        T.waitFor(noWait, function(){
+          if (didWait) {
+            callback(contextName, 'done');
+          }
+        });
+
       });
     });
-    return results;
   };
 
 // Runner
-  T.Runner = function(before, test, after){
+  T.Runner = function(testName, beforeCalls, test, afterCalls, callback){
     var runner = this;
-    this.running = true;
+    this.name = testName;
+    this.callback = callback;
     this.assertions = new T.Assertions(this);
+    this.passing = true;
+    var noWait = function(){ return runner.assertions.waitForCount === 0; };
     try {
-      for(var i=0,b;b=before[i];i++){ b(this.assertions); }
+      for(var i=0;beforeCalls[i];i++){
+        var beforeCall = beforeCalls[i];
+        T.waitFor(noWait, function(){
+          beforeCall(runner.assertions);
+        });
+      }
     } catch (e) {
-      reportException(this, e);
+      runner.passing = false;
+      reportException(testName, callback, runner.assertions.length, e);
     }
-    T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
-      if (runner.result === undefined) {
+    if (!noWait()){
+      callback(testName, 'running', runner.assertions.length);
+    }
+    T.waitFor(noWait, function(){
+      if (runner.passing === true) {
         try {
           test(runner.assertions);
         } catch (e) {
-          reportException(runner, e);
+          runner.passing = false;
+          reportException(testName, callback, runner.assertions.length, e);
         }
       }
-      T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
-        for(var i=0,a;a=after[i];i++){
-          try {
-            a(runner.assertions);
-          } catch (e) {
-            if (runner.result === undefined) {
-              reportException(runner, e);
+      if (!noWait()){
+        callback(testName, 'running', runner.assertions.length);
+      }
+      T.waitFor(noWait, function(){
+        for(var i=0;a=afterCalls[i];i++){
+          var afterCall = afterCalls[i];
+          T.waitFor(noWait, function(){
+            try {
+              afterCall(runner.assertions);
+            } catch (e) {
+              if (runner.result === undefined) {
+                runner.passing = false;
+                reportException(testName, callback, runner.assertions.length, e);
+              }
             }
-          }
+          });
         }
-        T.waitFor(function(){ return runner.assertions.waitForCount === 0; }, function(){
-          if (runner.result === undefined) {
-            runner.result = 'pass';
+        T.waitFor(noWait, function(){
+          if (runner.passing) {
+            runner.callback(runner.name, 'pass', runner.assertions.length);
           }
-          runner.running = false;
         });
       });
     });
   };
 
 // Assertions
-  T.Assertions = function(result){
-    this.result = result;
+  T.Assertions = function(runner){
+    this.runner = runner;
     this.length = 0;
     this.waitForCount = 0;
   };
@@ -140,7 +176,8 @@
       try {
         callback();
       } catch(e) {
-        reportException(assertion.result, e);
+        assertion.runner.passing = false;
+        reportException(assertion.runner.name, assertion.runner.callback, assertion.length, e);
       }
       assertion.waitForCount -= 1;
     });
@@ -162,189 +199,144 @@
   T.Assertions.Failure = function(message){ this.message = message; };
 
 // Reporting
-  var countWithResult = function(result, context){
-    var count = 0;
-    if (context === undefined) {
-      for(var i=0,testOutput;testOutput=this.testOutputs[i];i++){
-        count += this.countWithResult(result, testOutput);
-      }
-    } else {
-      for(var name in context){
-        if(result === 'running' && context[name].running){
-          count++;
-        } else {
-          if(context[name].result !== undefined) {
-            if(context[name].result === result){ count++; }
-          } else {
-            count += this.countWithResult(result, context[name]);
-          }
+// NodeReporter
+  T.nodeReporter = function(testName, status, assertionCount, message){
+    var reporter = T.nodeReporter, prefix = '', suffix = '';
+    var puts = reporter.puts = reporter.puts || require('sys').puts;
+    var exit = reporter.exit = reporter.exit || process.exit;
+    var counts = reporter.counts = reporter.counts || {
+      tests: 0,
+      pass: 0,
+      fail: 0,
+      error: 0
+    };
+    var timeout = reporter.timeout;
+    var runningTests = reporter.runningTests || [];
+    if (status === 'running' && runningTests.indexOf(testName) === -1){
+      runningTests.push(testName);
+    }
+    if (status !== 'running' && runningTests.indexOf(testName) !== -1){
+      var newList = [];
+      for (var i=0,n;n=runningTests[i];i++){
+        if (n !== testName){
+          newList.push(n);
         }
       }
+      runningTests = reporter.runningTests = newList;
     }
-    return count;
-  };
-  var reportContext = function(testOutput, contextName){
-    contextName = contextName || '';
-    for(var name in testOutput){
-      if(testOutput[name].assertions){
-        this.reportTest(contextName+name, testOutput[name]);
-      }else{
-        this.reportContext(testOutput[name], contextName+name+': ');
-      }
-    }
-  };
-  T.createReporter = function(initialize){
-    var constructor = function(testOutput){
-      constructor.testOutputs.push(testOutput);
-      initialize.apply(this, arguments);
-    };
-    constructor.testOutputs = [];
-    constructor.countWithResult = countWithResult;
-    constructor.prototype.reportContext = reportContext;
-    return constructor;
-  };
 
-// T.NodeReporter
-  T.NodeReporter = T.createReporter(function(testOutput){
-    this.constructor.puts = this.constructor.puts || require('sys').puts;
-    this.reportContext(testOutput);
-    this.constructor.displaySummary();
-    this.constructor.exit = process.exit;
-  });
-  T.NodeReporter.color_red   = '\033[31m';
-  T.NodeReporter.reset_color = '\033[39m';
-  T.NodeReporter.displaySummary = function(){
-    var constructor=this;
-    if (constructor.interval){ return; }
-    constructor.interval = setInterval(function(){
-      if (constructor.countWithResult('running') !== 0) { return; }
-      clearInterval(constructor.interval);
-      delete constructor.interval;
-      var passCount = constructor.countWithResult('pass'),
-          failCount = constructor.countWithResult('fail'),
-          errorCount = constructor.countWithResult('error');
-      var output, prefix = '', suffix = '';
-      if (errorCount){
-        prefix = constructor.color_red;
-        suffix = constructor.reset_color;
-        output = 'Error! ';
-      } else if (failCount){
-        prefix = constructor.color_red;
-        suffix = constructor.reset_color;
-        output = 'Fail. ';
+    if (status !== 'running' && status !== 'done'){
+      if (status !== 'pass'){ prefix = reporter.redColor; suffix = reporter.resetColor; }
+      var output = testName+': '+status
+      if (status !== 'pass' && message) { output += ': '+message; }
+      output += ' ('+assertionCount+' assertion'+(assertionCount === 1 ? '' : 's')+' run)';
+      puts(prefix + output + suffix);
+      counts.tests++;
+      counts[status]++;
+    }
+
+    if (timeout){
+      clearTimeout(timeout);
+      delete timeout;
+    }
+    if (runningTests.length){ return; }
+    reporter.timeout = setTimeout(function(){
+      delete timeout;
+
+      var output, prefix = '', suffix = '', details = [];
+      if (counts.error > 0){
+        prefix = reporter.redColor;
+        suffix = reporter.resetColor;
+        output = 'Error!';
+      } else if (counts.fail > 0){
+        prefix = reporter.redColor;
+        suffix = reporter.resetColor;
+        output = 'Fail.';
       } else {
-        output = 'Pass. ';
+        output = 'Pass.';
       }
-      output += '('+(passCount+failCount+errorCount)+' tests: ';
-      var details = [];
-      if (passCount) { details.push(passCount+' passed'); }
-      if (failCount) { details.push(failCount+' failed'); }
-      if (errorCount) { details.push(errorCount+' errored'); }
-      constructor.puts(prefix + output + details.join(', ') + ')' + suffix);
-      constructor.exit((failCount + errorCount) === 0 ? 0 : 1)
+      output += ' ('+counts.tests+' tests: ';
+      if (counts.pass > 0){ details.push(counts.pass+' passed'); }
+      if (counts.fail > 0){ details.push(counts.fail+' failed'); }
+      if (counts.error > 0){ details.push(counts.error+' errored'); }
+      puts(prefix + output + details.join(', ')+')' + suffix);
+      exit((counts.fail || counts.error) ? 1 : 0)
     }, 200);
   };
-  T.NodeReporter.prototype.reportTest = function(name, testOutput){
-    var constructor = this.constructor;
-    T.waitFor(function(){ return testOutput.running !== true; }, function(){
-      var output = name+': '+testOutput.result,
-          prefix = '',
-          suffix = '';
-      if (testOutput.result !== 'pass'){
-        prefix = constructor.color_red;
-        suffix = constructor.reset_color;
-        if (testOutput.message) {
-          output += ': '+testOutput.message;
-        }
-      }
-      output += ' ('+testOutput.assertions.length+' assertion'+(testOutput.assertions.length === 1 ? '' : 's')+' run)';
-      constructor.puts(prefix+output+suffix);
-    });
-  };
+  T.nodeReporter.redColor   = '\033[31m';
+  T.nodeReporter.resetColor = '\033[39m';
 
 // DomReporter
-  T.DomReporter = T.createReporter(function(testOutput){
-    var constructor = this.constructor;
-    if (!constructor.log){
-      var log = constructor.log = document.createElement('ul');
-      log.id = constructor.elementId;
+  T.domReporter = function(testName, status, assertionCount, message){
+    var reporter = T.domReporter;
+    if (!reporter.log){
+      reporter.log = document.createElement('ul');
+      reporter.log.id = 'test-it-results';
       T.waitFor(function(){ return document.body; }, function(){
-        document.body.appendChild(log);
+        document.body.appendChild(reporter.log);
       });
-      constructor.summary = document.createElement('li');
-      log.appendChild(constructor.summary);
-      constructor.showPassing = false;
-      constructor.summary.onclick = function(){
-        constructor.showPassing = !constructor.showPassing;
-        log.className = constructor.showPassing ? 'show-passing' : '';
-      };
+      reporter.summary = document.createElement('li');
+      reporter.log.appendChild(reporter.summary);
     }
-    constructor.summary.className = 'summary running';
-    constructor.summary.innerHTML = "Running...";
-    this.reportContext(testOutput);
-    this.constructor.displaySummary();
-  });
-  T.DomReporter.elementId = 'test-it-results';
-  T.DomReporter.displaySummary = function(){
-    var constructor = this,
-        log = constructor.log,
-        summary = constructor.summary,
-        runningCount, passCount, failCount, errorCount;
-    var updateSummary = function(){
-      runningCount = constructor.countWithResult('running');
-      passCount = constructor.countWithResult('pass');
-      failCount = constructor.countWithResult('fail');
-      errorCount = constructor.countWithResult('error');
-      var html;
-      if (runningCount === 0){
-        if (errorCount){
-          html = 'Error! ';
-        } else if (failCount){
-          html = 'Fail. ';
-        } else {
-          html = 'Pass. ';
-        }
-      } else {
-        html = 'Running... ';
-      }
-      html += '<small>('+(runningCount+passCount+failCount+errorCount)+" tests: ";
-      var details = [];
-      if (runningCount) { details.push(runningCount+' running'); }
-      if (passCount) { details.push(passCount+' passed'); }
-      if (failCount) { details.push(failCount+' failed'); }
-      if (errorCount) { details.push(errorCount+' errored'); }
-      html += details.join(', ');
-      summary.innerHTML = html+')</small>';
+    reporter.runningTests = reporter.runningTests || {}
+    reporter.counts = reporter.counts || {
+      tests: 0,
+      running: 0,
+      pass: 0,
+      fail: 0,
+      error: 0
     };
-    T.waitFor(function(){
-      updateSummary();
-      return runningCount === 0;
-    }, function(){
-      if (errorCount) {
-        summary.className = 'summary error';
-      } else if (failCount) {
-        summary.className = 'summary fail';
-      } else {
-        summary.className = 'summary pass';
+    reporter.counts.tests++;
+    reporter.counts[status]++;
+
+    var testLog = reporter.runningTests[testName];
+    if (testLog) {
+      reporter.counts.tests--;
+      reporter.counts.running--;
+    } else {
+      testLog = document.createElement('li');
+      reporter.log.appendChild(testLog);
+      if (status !== 'running'){
+        delete reporter.runningTests[testName];
       }
-    });
-  };
-  T.DomReporter.prototype.reportTest = function(name, testOutput){
-    var constructor = this.constructor,
-        li = document.createElement('li'),
-        html = name+': ';
-    li.innerHTML = html + 'running...';
-    li.className = 'running';
-    constructor.log.appendChild(li);
-    T.waitFor(function(){ return testOutput.running !== true; }, function(){
-      html += testOutput.result;
-      if (testOutput.result !== 'pass' && testOutput.message) {
-        html += ': '+testOutput.message;
+    }
+    if (status === 'done'){
+      reporter.counts.tests--;
+      reporter.log.removeChild(testLog);
+    } else {
+      testLog.className = status;
+      var html = testName + ': ' + status;
+      if (status !== 'pass' && message){
+        html += ': '+message;
       }
-      html += ' ('+testOutput.assertions.length+' assertion'+(testOutput.assertions.length === 1 ? '' : 's')+' run)';
-      li.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      li.className = testOutput.result;
-    });
+      html += ' ('+assertionCount+' assertion'+(assertionCount === 1 ? '' : 's')+' run)';
+      testLog.innerHTML = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (status === 'running'){
+        reporter.runningTests[testName] = testLog;
+      }
+    }
+
+    if (reporter.counts.running){
+      html = 'Running... ';
+      reporter.summary.className = 'summary running';
+    } else if (reporter.counts.error){
+      html = 'Error! ';
+      reporter.summary.className = 'summary error';
+    } else if (reporter.counts.fail){
+      html = 'Fail. ';
+      reporter.summary.className = 'summary fail';
+    } else {
+      html = 'Pass. ';
+      reporter.summary.className = 'summary pass';
+    }
+    html += '<small>('+reporter.counts.tests+' test'+(reporter.counts.tests === 1 ? '' : 's')+': ';
+    var details = [];
+    if (reporter.counts.pass) { details.push(reporter.counts.pass+' passed'); }
+    if (reporter.counts.running) { details.push(reporter.counts.running+' running'); }
+    if (reporter.counts.fail) { details.push(reporter.counts.fail+' failed'); }
+    if (reporter.counts.error) { details.push(reporter.counts.error+' errored'); }
+    html += details.join(', ');
+    reporter.summary.innerHTML = html+')</small>';
   };
 
 // Helpers
