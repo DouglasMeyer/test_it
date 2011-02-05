@@ -1,0 +1,12 @@
+1.1.0 (Feb 5th, 2011)
+
+* Fixed issue with "t.waitFor" in an extension's "before all".
+* Removed "reporting" in favor of a callback style.
+* Running tests in node.js highlights failures/errors and returns proper status code.
+  Now TestIt is perfect, sorry my mistake.
+
+
+1.0.0 (Jan 14th, 2011)
+
+* Initial Release!
+  Finally after 19 months and 3 attempts the TestIt framework is finally perfect.
