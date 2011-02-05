@@ -62,12 +62,12 @@ they should get run before all, after all, ... tests. If an exception (or failur
 If you want more than the minimal reporting that TestIt provides by default, feel free to use your own. You can create a callback like such:
     MyReporter = function(testName, status, assertionCount, message) { ...
 and expect it to get called like this:
-    MyReporter('my tests', 'running', 0); // You'll see this if there is a waitFor in 'before all', 'before each', ...
-    MyReporter('my tests', 'done', 1); // This will let you know that the waitFor has completed.
-    MyReporter('my tests: a test', 'pass', 2);
-    MyReporter('my tests: running test', 'running', 1); // You can expect 'running' tests to get reported again with either 'pass', 'fail', or 'error'.
-    MyReporter('my tests: failing tests', 'fail', 1, 'expected 1 but was 0');
-    MyReporter('my tests: running test', 'pass', 2);
+    MyReporter(['my tests'], 'running', 0); // You'll see this if there is a waitFor in 'before all', 'before each', ...
+    MyReporter(['my tests'], 'done', 1); // This will let you know that the waitFor has completed.
+    MyReporter(['my tests', 'a test'], 'pass', 2);
+    MyReporter(['my tests', 'running test'], 'running', 1); // You can expect 'running' tests to get reported again with either 'pass', 'fail', or 'error'.
+    MyReporter(['my tests', 'failing tests'], 'fail', 1, 'expected 1 but was 0');
+    MyReporter(['my tests', 'running test'], 'pass', 2);
 
 
 Then you can use your reporter like so:

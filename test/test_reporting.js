@@ -43,8 +43,8 @@ var runTestsOneAtATime = (function(){
           }
         }, testReporter);
         t.assertEqual([
-          [ 'tests: a test', 'pass', 1 ],
-          [ 'tests: a context: failing test', 'fail', 1, 'false is not true' ]
+          [ ['tests', 'a test'], 'pass', 1 ],
+          [ ['tests', 'a context', 'failing test'], 'fail', 1, 'false is not true' ]
         ], testReporter.calls);
       }
     },
@@ -71,28 +71,28 @@ var runTestsOneAtATime = (function(){
               return testReporter.calls.length === expectedCalls.length || time > 1000;
             };
         expectedCalls = [
-          [ 'tests', 'running' ]
+          [ ['tests'], 'running' ]
         ];
         t.assertEqual(expectedCalls, testReporter.calls);
         testReporter.calls = [];
         expectedCalls = [
-          [ 'tests: a test', 'running' ],
-          [ 'tests: a context', 'running' ]
+          [ ['tests', 'a test'], 'running' ],
+          [ ['tests', 'a context'], 'running' ]
         ];
         t.waitFor(callsMet, function(){
           t.assertEqual(expectedCalls, testReporter.calls);
           testReporter.calls = [];
           expectedCalls = [
-            [ 'tests: a test', 'pass', 1 ],
-            [ 'tests: a context: failing test', 'running', 1 ]
+            [ ['tests', 'a test'], 'pass', 1 ],
+            [ ['tests', 'a context', 'failing test'], 'running', 1 ]
           ];
           t.waitFor(callsMet, function(){
             t.assertEqual(expectedCalls, testReporter.calls);
             testReporter.calls = [];
             expectedCalls = [
-              [ 'tests: a context: failing test', 'fail', 2, 'false is not true' ],
-              [ 'tests: a context', 'done' ],
-              [ 'tests', 'done' ]
+              [ ['tests', 'a context', 'failing test'], 'fail', 2, 'false is not true' ],
+              [ ['tests', 'a context'], 'done' ],
+              [ ['tests'], 'done' ]
             ];
             t.waitFor(callsMet, function(){
               t.assertEqual(expectedCalls, testReporter.calls);
@@ -121,22 +121,22 @@ var runTestsOneAtATime = (function(){
       delete testNodeReporter.counts;
     },
     'should show one summary for all tests': function(t){
-      testNodeReporter('tests: passing test', 'pass', 0);
+      testNodeReporter(['tests', 'passing test'], 'pass', 0);
       t.assertEqual('tests: passing test: pass (0 assertions run)', lastPuts);
-      testNodeReporter('more tests: failing test', 'fail', 0, 'failure message');
+      testNodeReporter(['more tests', 'failing test'], 'fail', 0, 'failure message');
       t.waitFor(function(time){ return time > 600; }, function(){
         t.assertEqual('Fail. (2 tests: 1 passed, 1 failed)', lastPuts.replace(/\033\[..m/g, ''));
       });
     },
     'should color failed tests red': function(t){
-      testNodeReporter('tests: failing test', 'fail', 1, 'failure message');
+      testNodeReporter(['tests', 'failing test'], 'fail', 1, 'failure message');
       t.assertEqual('\033[31mtests: failing test: fail: failure message (1 assertion run)\033[39m', lastPuts);
       t.waitFor(function(time){ return time > 400; }, function(){
         t.assertEqual('\033[31mFail. (1 tests: 1 failed)\033[39m', lastPuts);
       });
     },
     'should color errored tests red': function(t){
-      testNodeReporter('tests: erroring test', 'error', 0, 'ERR');
+      testNodeReporter(['tests', 'erroring test'], 'error', 0, 'ERR');
       t.assertEqual('\033[31mtests: erroring test: error: ERR (0 assertions run)\033[39m', lastPuts);
       t.waitFor(function(time){ return time > 400; }, function(){
         t.assertEqual('\033[31mError! (1 tests: 1 errored)\033[39m', lastPuts);
@@ -146,21 +146,21 @@ var runTestsOneAtATime = (function(){
       t.mock(testNodeReporter, 'exit', 1, function(code){
         t.assertEqual(1, code);
       });
-      testNodeReporter('tests: erroring test', 'error', 0, 'ERR');
+      testNodeReporter(['tests', 'erroring test'], 'error', 0, 'ERR');
       t.waitFor(function(time){ return time > 400; }, function(){ });
     },
     'should work with tests that are running': function(t){
-      testNodeReporter('running test', 'running', 1);
+      testNodeReporter(['running test'], 'running', 1);
       t.assertEqual(undefined, lastPuts);
 
-      testNodeReporter('running test', 'pass', 2);
+      testNodeReporter(['running test'], 'pass', 2);
       t.assertEqual('running test: pass (2 assertions run)', lastPuts.replace(/\033\[..m/g, ''));
     },
     'should handle tests running "before all"s': function(t){
-      testNodeReporter('before all', 'running', 0);
+      testNodeReporter(['before all'], 'running', 0);
       t.assertEqual(undefined, lastPuts);
 
-      testNodeReporter('before all', 'done', 0);
+      testNodeReporter(['before all'], 'done', 0);
       t.assertEqual(undefined, lastPuts);
     }
   }, MockIt, runTestsOneAtATime);
@@ -207,7 +207,7 @@ var runTestsOneAtATime = (function(){
         t.assert(fakeLog === elem, 'did not append log to body');
       });
 
-      testDomReporter('test', 'pass', 0);
+      testDomReporter(['test'], 'pass', 0);
 
       t.assertEqual('test-it-results', fakeLog.id);
     },
@@ -227,11 +227,11 @@ var runTestsOneAtATime = (function(){
       t.mock(document.body, 'appendChild', function(){});
       t.mock(fakeLog, 'appendChild', 3, function(){});
 
-      testDomReporter('good test', 'pass', 0);
+      testDomReporter(['good test'], 'pass', 0);
       t.assertEqual('pass', resultLog.className);
       t.assertEqual('good test: pass (0 assertions run)', resultLog.innerHTML);
 
-      testDomReporter('bad test', 'fail', 1, 'failure message');
+      testDomReporter(['bad test'], 'fail', 1, 'failure message');
       t.assertEqual('fail', resultLog.className);
       t.assertEqual('bad test: fail: failure message (1 assertion run)', resultLog.innerHTML);
     },
@@ -247,11 +247,11 @@ var runTestsOneAtATime = (function(){
       });
       t.mock(document.body, 'appendChild', function(){});
 
-      testDomReporter('good test', 'pass', 0);
+      testDomReporter(['good test'], 'pass', 0);
       t.assertEqual('summary pass', fakeSummary.className);
       t.assertEqual('Pass. <small>(1 test: 1 passed)</small>', fakeSummary.innerHTML);
 
-      testDomReporter('bad test', 'fail', 0);
+      testDomReporter(['bad test'], 'fail', 0);
       t.assertEqual('summary fail', fakeSummary.className);
       t.assertEqual('Fail. <small>(2 tests: 1 passed, 1 failed)</small>', fakeSummary.innerHTML);
     },
@@ -269,13 +269,13 @@ var runTestsOneAtATime = (function(){
       });
       t.mock(document.body, 'appendChild', function(){});
 
-      testDomReporter('running test', 'running', 1);
+      testDomReporter(['running test'], 'running', 1);
       t.assertEqual('running', resultLog.className);
       t.assertEqual('running test: running (1 assertion run)', resultLog.innerHTML);
       t.assertEqual('summary running', fakeSummary.className);
       t.assertEqual('Running... <small>(1 test: 1 running)</small>', fakeSummary.innerHTML);
 
-      testDomReporter('running test', 'pass', 2);
+      testDomReporter(['running test'], 'pass', 2);
       t.assertEqual('pass', resultLog.className);
       t.assertEqual('running test: pass (2 assertions run)', resultLog.innerHTML);
       t.assertEqual('summary pass', fakeSummary.className);
@@ -301,13 +301,13 @@ var runTestsOneAtATime = (function(){
         t.assert(beforeAllLog === e, 'log did not remove before all log');
       });
 
-      testDomReporter('before all', 'running', 0);
+      testDomReporter(['before all'], 'running', 0);
       t.assertEqual('running', beforeAllLog.className);
       t.assertEqual('before all: running (0 assertions run)', beforeAllLog.innerHTML);
       t.assertEqual('summary running', fakeSummary.className);
       t.assertEqual('Running... <small>(1 test: 1 running)</small>', fakeSummary.innerHTML);
 
-      testDomReporter('before all', 'done', 0);
+      testDomReporter(['before all'], 'done', 0);
       t.assertEqual('summary pass', fakeSummary.className);
       t.assertEqual('Pass. <small>(0 tests: )</small>', fakeSummary.innerHTML);
     }

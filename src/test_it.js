@@ -13,8 +13,7 @@
         tests[name] = extension[name];
       }
     }
-    //FIXME: change "" to []
-    T.Context(contextName, tests, [], [], callback);
+    T.Context([contextName], tests, [], [], callback);
   };
 
   var reportException = function(name, callback, assertionCount, exception){
@@ -26,7 +25,6 @@
   };
   T.Context = function(contextName, tests, contextBefore, contextAfter, callback){
     var assertions;
-    //FIXME: this is now redundant
     var before = (contextBefore || []).concat();
     var after  = (contextAfter  || []).concat();
     var beforeAll  = tests['before all'] || function(){},
@@ -41,7 +39,7 @@
       assertions = new T.Assertions();
       beforeAll(assertions);
     } catch (e) {
-      reportException(contextName+': before all', callback, assertions.length, e);
+      reportException(contextName.concat('before all'), callback, assertions.length, e);
       afterAll && afterAll(assertions);
       return;
     }
@@ -55,28 +53,22 @@
       var originalCallback = callback,
           runningChildren = [],
           observeChildren = function(name, status){
-            if (status === 'running' && runningChildren.indexOf(name) === -1){
+            var index = indexOf(runningChildren, name);
+            if (status === 'running' && index === -1){
               runningChildren.push(name);
-            }
-            if (status !== 'running' && runningChildren.indexOf(name) !== -1){
-              var newList = [];
-              for (var i=0,n;n=runningChildren[i];i++){
-                if (n !== name){
-                  newList.push(n);
-                }
-              }
-              runningChildren = newList;
+            } else if (status !== 'running' && index !== -1){
+              runningChildren.splice(index, 1);
             }
             originalCallback.apply(null, arguments);
           };
       for(var testName in tests){
         var test = tests[testName];
         if (typeof(test) === 'function') {
-          new T.Runner(contextName+': '+testName, before, test, after, observeChildren);
+          new T.Runner(contextName.concat(testName), before, test, after, observeChildren);
         } else {
           var newContextName = contextName;
           if (testName !== '') {
-            newContextName += ': '+testName;
+            newContextName = newContextName.concat(testName);
           }
           T.Context(newContextName, test, before, after, observeChildren);
         }
@@ -88,10 +80,8 @@
           assertions = new T.Assertions();
           afterAll(assertions);
         } catch (e) {
-          reportException(contextName+': after all', callback, assertions.length, e);
+          reportException(contextName.concat('after all'), callback, assertions.length, e);
         }
-
-//FIXME: test this in reporting
         if (!noWait()){
           didWait = true;
           callback(contextName, 'running');
@@ -101,7 +91,6 @@
             callback(contextName, 'done');
           }
         });
-
       });
     });
   };
@@ -109,10 +98,10 @@
 // Runner
   T.Runner = function(testName, beforeCalls, test, afterCalls, callback){
     var runner = this;
-    this.name = testName;
-    this.callback = callback;
-    this.assertions = new T.Assertions(this);
-    this.passing = true;
+    runner.name = testName;
+    runner.callback = callback;
+    runner.assertions = new T.Assertions(this);
+    runner.passing = true;
     var noWait = function(){ return runner.assertions.waitForCount === 0; };
     try {
       for(var i=0;beforeCalls[i];i++){
@@ -123,10 +112,10 @@
       }
     } catch (e) {
       runner.passing = false;
-      reportException(testName, callback, runner.assertions.length, e);
+      reportException(runner.name, runner.callback, runner.assertions.length, e);
     }
     if (!noWait()){
-      callback(testName, 'running', runner.assertions.length);
+      runner.callback(runner.name, 'running', runner.assertions.length);
     }
     T.waitFor(noWait, function(){
       if (runner.passing === true) {
@@ -134,11 +123,11 @@
           test(runner.assertions);
         } catch (e) {
           runner.passing = false;
-          reportException(testName, callback, runner.assertions.length, e);
+          reportException(runner.name, runner.callback, runner.assertions.length, e);
         }
       }
       if (!noWait()){
-        callback(testName, 'running', runner.assertions.length);
+        runner.callback(runner.name, 'running', runner.assertions.length);
       }
       T.waitFor(noWait, function(){
         for(var i=0;a=afterCalls[i];i++){
@@ -149,7 +138,7 @@
             } catch (e) {
               if (runner.passing === true) {
                 runner.passing = false;
-                reportException(testName, callback, runner.assertions.length, e);
+                reportException(runner.name, runner.callback, runner.assertions.length, e);
               }
             }
           });
@@ -201,28 +190,19 @@
 // Reporting
 // NodeReporter
   T.nodeReporter = function(testName, status, assertionCount, message){
-    var reporter = T.nodeReporter, prefix = '', suffix = '';
-    var puts = reporter.puts = reporter.puts || require('sys').puts;
-    var exit = reporter.exit = reporter.exit || process.exit;
-    var counts = reporter.counts = reporter.counts || {
-      tests: 0,
-      pass: 0,
-      fail: 0,
-      error: 0
-    };
-    var timeout = reporter.timeout;
+    var reporter = T.nodeReporter, prefix = '', suffix = '',
+        testName = testName.join(': '),
+        //NOTE: These next 2 are mostly for testing purposes.
+        puts = reporter.puts = reporter.puts || require('sys').puts,
+        exit = reporter.exit = reporter.exit || process.exit,
+        timeout = reporter.timeout,
+        counts = reporter.counts = reporter.counts || { tests: 0, pass: 0, fail: 0, error: 0 };
     reporter.runningTests = reporter.runningTests || [];
-    if (status === 'running' && reporter.runningTests.indexOf(testName) === -1){
+    var index = indexOf(reporter.runningTests, testName);
+    if (status === 'running' && index === -1){
       reporter.runningTests.push(testName);
-    }
-    if (status !== 'running' && reporter.runningTests.indexOf(testName) !== -1){
-      var newList = [];
-      for (var i=0,n;n=reporter.runningTests[i];i++){
-        if (n !== testName){
-          newList.push(n);
-        }
-      }
-      reporter.runningTests = newList;
+    } else if (status !== 'running' && index !== -1){
+      reporter.runningTests.splice(index, 1);
     }
 
     if (status !== 'running' && status !== 'done'){
@@ -268,7 +248,8 @@
 
 // DomReporter
   T.domReporter = function(testName, status, assertionCount, message){
-    var reporter = T.domReporter;
+    var testName = testName.join(': '),
+        reporter = T.domReporter;
     reporter.showPassing = reporter.showPassing || false;
     if (!reporter.log){
       reporter.log = document.createElement('ul');

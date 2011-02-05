@@ -80,8 +80,8 @@ if (typeof document === 'undefined'){
       },
       'should not change reporting': function(t){
         t.assertEqual([
-          ['testing: test something', 'pass'],
-          ['testing: test something else', 'pass']
+          [['testing', 'test something'], 'pass'],
+          [['testing', 'test something else'], 'pass']
         ], reports);
       }
     },
@@ -100,9 +100,9 @@ if (typeof document === 'undefined'){
       'should still report': function(t){
         t.waitFor(function(time){ return time > 900; }, function(){
           t.assertEqual([
-            ['testing', 'running'],
-            ['testing: a test', 'pass'],
-            ['testing', 'done']
+            [['testing'], 'running'],
+            [['testing', 'a test'], 'pass'],
+            [['testing'], 'done']
           ], reports);
         });
       }
