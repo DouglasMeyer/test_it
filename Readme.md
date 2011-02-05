@@ -57,30 +57,18 @@ they should get run before all, after all, ... tests. If an exception (or failur
 
 ## What else can it do?
 
-### Custom reporters
+### Custom callback
 
-If you want more than the minimal reporting that TestIt provides by default, feel free to use your own. You can create a reporter like such:
-    MyReporter = TestIt.createReporter(function(contextOutput){
-      this.reportContext(contextOutput);
-    });
-`reportContext` will be defined and will make calls to `MyReporter.prototype.reportTest` passing it the test name and the test's output.
-You will also have access to `myReporter.countWithResult(result)` which will count all the `contextOutput`s that have a matching result ('running', 'pass', 'fail', 'error').
-contextOutput will have a format similar to:
-    { 'my tests': {
-      'a test': {
-        assertions: { length: 2 }
-        result: 'pass'
-      },
-      'running test': {
-        assertions: { length: 0 },
-        running: true
-      },
-      'failing test': {
-        assertions: { length: 1 },
-        result: 'fail',
-        message: 'expected 1 but was 0'
-      }
-    }}
+If you want more than the minimal reporting that TestIt provides by default, feel free to use your own. You can create a callback like such:
+    MyReporter = function(testName, status, assertionCount, message) { ...
+and expect it to get called like this:
+    MyReporter('my tests', 'running', 0); // You'll see this if there is a waitFor in 'before all', 'before each', ...
+    MyReporter('my tests', 'done', 1); // This will let you know that the waitFor has completed.
+    MyReporter('my tests: a test', 'pass', 2);
+    MyReporter('my tests: running test', 'running', 1); // You can expect 'running' tests to get reported again with either 'pass', 'fail', or 'error'.
+    MyReporter('my tests: failing tests', 'fail', 1, 'expected 1 but was 0');
+    MyReporter('my tests: running test', 'pass', 2);
+
 
 Then you can use your reporter like so:
     TestIt('my tests', {

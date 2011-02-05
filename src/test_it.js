@@ -147,7 +147,7 @@
             try {
               afterCall(runner.assertions);
             } catch (e) {
-              if (runner.result === undefined) {
+              if (runner.passing === true) {
                 runner.passing = false;
                 reportException(testName, callback, runner.assertions.length, e);
               }
@@ -269,6 +269,7 @@
 // DomReporter
   T.domReporter = function(testName, status, assertionCount, message){
     var reporter = T.domReporter;
+    reporter.showPassing = reporter.showPassing || false;
     if (!reporter.log){
       reporter.log = document.createElement('ul');
       reporter.log.id = 'test-it-results';
@@ -276,6 +277,10 @@
         document.body.appendChild(reporter.log);
       });
       reporter.summary = document.createElement('li');
+      reporter.summary.onclick = function(){
+        reporter.showPassing = !reporter.showPassing;
+        reporter.log.className = reporter.showPassing ? 'show-passing' : '';
+      };
       reporter.log.appendChild(reporter.summary);
     }
     reporter.runningTests = reporter.runningTests || {}
