@@ -1,3 +1,9 @@
+1.1.1 (Feb 6th, 2011)
+
+* Again, fixing assertion issue with "before/after all".
+* A bunch of test fixes.
+  You can always perfect perfection.
+
 1.1.0 (Feb 5th, 2011)
 
 * Fixed issue with "t.waitFor" in an extension's "before all".
