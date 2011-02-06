@@ -44,7 +44,15 @@ var indexOf = function(array, el){
       'should call callback when test is running': function(t){
         var testReporter = createReporter(),
             aBit = function(time){ return time > 300; },
-            noop = function(){};
+            noop = function(){},
+            assertEqualSets = function(expected, actual){
+              var message = "Sets aren't equal; expected "+TestIt.inspect(expected)+", but was "+TestIt.inspect(actual);
+              t.assertEqual(expected.length, actual.length, message);
+              var actualInspect = TestIt.inspect(actual);
+              for(var i=0,e;e=expected[i];i++){
+                t.assert(actualInspect.indexOf(TestIt.inspect(e)) !== -1, message);
+              }
+            };
         TestIt('tests', {
           'before all': function(t){
             t.waitFor(aBit,noop);
@@ -65,21 +73,21 @@ var indexOf = function(array, el){
         expectedCalls = [
           [ ['tests'], 'running' ]
         ];
-        t.assertEqual(expectedCalls, testReporter.calls);
+        assertEqualSets(expectedCalls, testReporter.calls);
         testReporter.calls = [];
         expectedCalls = [
           [ ['tests', 'a test'], 'running' ],
           [ ['tests', 'a context'], 'running' ]
         ];
         t.waitFor(callsMet, function(){
-          t.assertEqual(expectedCalls, testReporter.calls);
+          assertEqualSets(expectedCalls, testReporter.calls);
           testReporter.calls = [];
           expectedCalls = [
-            [ ['tests', 'a test'], 'pass', 1 ], //FIXME: sometimes these come in reverse order.
+            [ ['tests', 'a test'], 'pass', 1 ],
             [ ['tests', 'a context', 'failing test'], 'running', 1 ]
           ];
           t.waitFor(callsMet, function(){
-            t.assertEqual(expectedCalls, testReporter.calls);
+            assertEqualSets(expectedCalls, testReporter.calls);
             testReporter.calls = [];
             expectedCalls = [
               [ ['tests', 'a context', 'failing test'], 'fail', 2, 'false is not true' ],
@@ -87,7 +95,7 @@ var indexOf = function(array, el){
               [ ['tests'], 'done' ]
             ];
             t.waitFor(callsMet, function(){
-              t.assertEqual(expectedCalls, testReporter.calls);
+              assertEqualSets(expectedCalls, testReporter.calls);
             });
           });
         });
