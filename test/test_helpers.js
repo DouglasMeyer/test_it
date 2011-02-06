@@ -1,9 +1,6 @@
 if (typeof TestIt === 'undefined'){
   TestIt = require('./../src/test_it').TestIt;
 }
-if (typeof document === 'undefined'){
-  document = {};
-}
 
 (function(){
   var isEqualTests = function(input){

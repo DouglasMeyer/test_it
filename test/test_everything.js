@@ -1,31 +1,14 @@
 if (typeof TestIt === 'undefined'){
   TestIt = require('./../src/test_it').TestIt;
 }
-if (typeof document === 'undefined'){
-  var element = {
-    appendChild: function(){},
-    getElementsByTagName: function(){ return []; }
-  };
-  document = {
-    body: element,
-    createElement: function(){
-      return element;
-    }
-  };
-}
 
-var testReporter = function(name, result, assertionCount, message){
-//      var args = [];
-//      for(var i=0,e;e=arguments[i];i++){ args.push(e); }
-//      testReporter.calls.push(args);
-    };
+var testReporter = function(name, result, assertionCount, message){ };
 
 (function(){
   var calls;
 
   TestIt('before/after tests and contexts', {
     'before all': function(t){
-      testReporter.calls = [];
       calls = [];
       TestIt('the tests', {
         'before all':  function(){ calls.push('before all');  },
@@ -100,11 +83,6 @@ var testReporter = function(name, result, assertionCount, message){
           'a test': function(){ calls.push('a test'); }
         }, testReporter);
       },
-//FIXME: move to reporter tests
-//      'should be reported': function(t){
-//        t.assertEqual('error', results['tests']['before all']['result']);
-//        t.assertEqual('out', results['tests']['before all']['message']);
-//      },
       'should run the "after all"': function(t){
         t.assertEqual(['after all'], calls);
       },
@@ -123,11 +101,6 @@ var testReporter = function(name, result, assertionCount, message){
           'a test': function(){ calls.push('a test'); }
         }, testReporter);
       },
-//FIXME: move to reporter tests
-//      'should be reported': function(t){
-//        t.assertEqual('error', results['tests']['a test']['result']);
-//        t.assertEqual('out', results['tests']['a test']['message']);
-//      },
       'should run the "after each"': function(t){
         t.assertEqual(['after each', 'after all'], calls);
       },
@@ -149,11 +122,6 @@ var testReporter = function(name, result, assertionCount, message){
           'a test': function(){ }
         }, testReporter);
       },
-//FIXME: move to reporter tests
-//      'should be reported': function(t){
-//        t.assertEqual('error', results['tests']['a test']['result']);
-//        t.assertEqual('out', results['tests']['a test']['message']);
-//      },
       'should run the "after all"': function(t){
         t.assertEqual(1, calls.length);
         t.assertEqual('after all', calls[0]);
@@ -161,55 +129,6 @@ var testReporter = function(name, result, assertionCount, message){
     }
   });
 })();
-
-//(function(){
-//  TestIt('running assertions', {
-//    'in "before all"': {
-//      'before all': function(){
-//        TestIt('tests', {
-//          'before all': function(t){ t.assert(false); },
-//          'a test': function(){ }
-//        }, testReporter);
-//      },
-//      'should be reported': function(t){
-//        t.assertEqual(1, results['tests']['before all']['assertions']['length']);
-//      }
-//    },
-//    'in "before each"': {
-//      'before all': function(){
-//        results = TestIt('tests', {
-//          'before each': function(t){ t.assert(false); },
-//          'a test': function(){ }
-//        }, testReporter);
-//      },
-//      'should be reported': function(t){
-//        t.assertEqual(1, results['tests']['a test']['assertions']['length']);
-//      }
-//    },
-//    'in "after each"': {
-//      'before all': function(){
-//        results = TestIt('tests', {
-//          'after each': function(t){ t.assert(false); },
-//          'a test': function(){ }
-//        }, testReporter);
-//      },
-//      'should be reported': function(t){
-//        t.assertEqual(1, results['tests']['a test']['assertions']['length']);
-//      }
-//    },
-//    'in "after all"': {
-//      'before all': function(){
-//        results = TestIt('tests', {
-//          'after all': function(t){ t.assert(false); },
-//          'a test': function(){ }
-//        }, testReporter);
-//      },
-//      'should be reported': function(t){
-//        t.assertEqual(1, results['tests']['after all']['assertions']['length']);
-//      }
-//    }
-//  });
-//})();
 
 (function(){
   var origTestItIsEqual = TestIt.isEqual;

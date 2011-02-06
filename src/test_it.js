@@ -36,7 +36,7 @@
     delete(tests['after each' ]);
     delete(tests['after all'  ]);
     try {
-      assertions = new T.Assertions();
+      assertions = new T.Assertions({ name: contextName.concat('before all'), callback: callback });
       beforeAll(assertions);
     } catch (e) {
       reportException(contextName.concat('before all'), callback, assertions.length, e);
@@ -77,7 +77,7 @@
         return runningChildren.length === 0;
       }, function(){
         try {
-          assertions = new T.Assertions();
+          assertions = new T.Assertions({ name: contextName.concat('after all'), callback: callback });
           afterAll(assertions);
         } catch (e) {
           reportException(contextName.concat('after all'), callback, assertions.length, e);
@@ -192,9 +192,7 @@
   T.nodeReporter = function(testName, status, assertionCount, message){
     var reporter = T.nodeReporter, prefix = '', suffix = '',
         testName = testName.join(': '),
-        //NOTE: These next 2 are mostly for testing purposes.
         puts = reporter.puts = reporter.puts || require('sys').puts,
-        exit = reporter.exit = reporter.exit || process.exit,
         timeout = reporter.timeout,
         counts = reporter.counts = reporter.counts || { tests: 0, pass: 0, fail: 0, error: 0 };
     reporter.runningTests = reporter.runningTests || [];
@@ -240,7 +238,7 @@
       if (counts.fail > 0){ details.push(counts.fail+' failed'); }
       if (counts.error > 0){ details.push(counts.error+' errored'); }
       puts(prefix + output + details.join(', ')+')' + suffix);
-      exit((counts.fail || counts.error) ? 1 : 0)
+      process.exit((counts.fail || counts.error) ? 1 : 0)
     }, 200);
   };
   T.nodeReporter.redColor   = '\033[31m';

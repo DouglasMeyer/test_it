@@ -2,8 +2,6 @@ if (typeof TestIt === 'undefined'){
   TestIt = require('./../src/test_it').TestIt;
 }
 
-var testReporter = function(){};
-
 (function(){
   var waitForCallbackCalled = false,
       start = new Date(),
@@ -53,7 +51,7 @@ var testReporter = function(){};
       addStep(tests['context'], 'before each','context: before each');
       addStep(tests['context'], 'after each', 'context: after each');
       addStep(tests['context'], 'test',       'context: test');
-      TestIt('tests', tests, testReporter);
+      TestIt('tests', tests, function(){});
 
       t.waitFor(function(time){
         return time > 9*300*1.5;
@@ -71,24 +69,6 @@ var testReporter = function(){};
         ];
         t.assertEqual(expected, calls);
       });
-
-//    },
-//    'in "before all"': {
-//      'should mark the context as running': function(t){
-//        var callbackCalled = false,
-//            results = TestIt('tests', {
-//              'before all': function(t){
-//                t.waitFor(function(time){ return time > 100; }, function(){
-//                  callbackCalled = true;
-//                });
-//              },
-//              'a test': function(){}
-//            }, testReporter);
-//        t.assert(results['tests'].running);
-//        t.waitFor(function(time){ return callbackCalled; }, function(){
-//          t.assert(!results['tests'].running)
-//        });
-//      }
     }
   });
 })();
