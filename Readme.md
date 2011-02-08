@@ -19,7 +19,7 @@ Quickly and easily test your JS.  Supports node.js and all the major browsers.
       }
     });
 
-And if you are testing in node.js remember to require it `var TestIt = require('./test_it').TestIt;` and you'll be good to go.
+And if you are testing in node.js remember to require it `var TestIt = require('./test_it');` and you'll be good to go.
 
 ### Assertions
 

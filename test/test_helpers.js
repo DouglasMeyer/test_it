@@ -1,5 +1,5 @@
 if (typeof TestIt === 'undefined'){
-  TestIt = require('./../src/test_it').TestIt;
+  TestIt = require('./../src/test_it');
 }
 
 (function(){

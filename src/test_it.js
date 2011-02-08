@@ -1,6 +1,6 @@
-(function(global){
+(function(){
 
-  var T = global.TestIt = function(contextName, tests){
+  var T = function(contextName, tests){
     var options = Array.prototype.slice.call(arguments, 2);
     var callback = typeof window === 'undefined' ? T.nodeReporter : T.domReporter;
     if (options.length > 0 && options[options.length-1].constructor === Function){
@@ -381,4 +381,10 @@
     }
   };
 
-})(typeof window === 'undefined' ? exports : window);
+  if (typeof module !== 'undefined'){
+    module.exports = T;
+  } else {
+    window.TestIt = T;
+  }
+
+})();
