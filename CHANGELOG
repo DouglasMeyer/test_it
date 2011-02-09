@@ -1,3 +1,7 @@
+1.2.0 (Feb 8th, 2011)
+
+* Better node.js usage.
+
 1.1.1 (Feb 6th, 2011)
 
 * Again, fixing assertion issue with "before/after all".
