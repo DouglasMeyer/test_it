@@ -53,6 +53,8 @@ if (typeof TestIt === 'undefined'){
   recursiveObject.self = recursiveObject;
   var recursiveArray = [1];
   recursiveArray.push(recursiveArray);
+  var modifiedArray = [3,4,5];
+  modifiedArray.extraProperty = 'hello';
   TestIt('TestIt.inspect', inspectTests([
 //  subject, outcome, subject description
     1, '1', 'Integer',
@@ -63,6 +65,7 @@ if (typeof TestIt === 'undefined'){
     null, 'null', 'null',
     {a:1,b:2}, '{a:1,b:2}', 'Object',
     recursiveObject, '{a:1,self:<recursive>}', 'Recursive object',
-    recursiveArray, '[1,<recursive>]', 'Recursive array'
+    recursiveArray, '[1,<recursive>]', 'Recursive array',
+    modifiedArray, '[3,4,5]', 'Modified array'
   ]));
 })();

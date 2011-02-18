@@ -346,20 +346,20 @@
         return 'null';
       } else if (subject.constructor === Array) {
         var output='[', first=true;
-        for(var e in subject){
+        var newStack = stack.concat();
+        newStack.push(subject);
+        for(var i=0,e;e=subject[i];i++){
           if (!first){ output += ','; }
-          var newStack = stack.concat();
-          newStack.push(subject);
-          output += T.inspect(subject[e], newStack);
+          output += T.inspect(e, newStack);
           first = false;
         }
         return output+']';
       }
       var output = '{', first=true;
+      var newStack = stack.concat();
+      newStack.push(subject);
       for(var e in subject){
         if (!first){ output += ','; }
-        var newStack = stack.concat();
-        newStack.push(subject);
         output += e+':'+T.inspect(subject[e], newStack);
         first = false;
       }

@@ -1,3 +1,7 @@
+1.2.1 (Feb 8th, 2011)
+
+* Fixed issue with TestIt.inspect on modified arrays.
+
 1.2.0 (Feb 8th, 2011)
 
 * Better node.js usage.
