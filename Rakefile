@@ -2,7 +2,7 @@ namespace :test do
   desc "Run tests in node"
   task :node do
     test_pattern = "test/test_*.js"
-    puts `tests=;for test in #{test_pattern} ; do tests="${tests}require('$(pwd)/${test}');" ; done ; echo $tests | node /proc/self/fd/0`
+    puts `tests=;for test in #{test_pattern} ; do tests="${tests}require('$(pwd)/${test}');" ; done ; echo $tests > /tmp/test_it_$$.pid && node /tmp/test_it_$$.pid ; rm /tmp/test_it_$$.pid`
   end
 
   desc "Run tests in browser (uses gnome-open)"
@@ -40,6 +40,16 @@ namespace :test do
     end
     %x(gnome-open build/run.html)
   end
+end
+
+desc "Watch Readme.md and generate Readme.html"
+task :watch_readme do
+  %x(pwd=$(pwd)
+  while inotifywait $pwd/Readme.md ; do
+    echo "Readme.md changed"
+    rdiscount Readme.md > Readme.html
+    echo "Readme.html updated"
+  done)
 end
 
 task :default => 'test:node'

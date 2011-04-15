@@ -1,0 +1,9 @@
+{
+  "name": "test_it",
+  "version": "1.2.2",
+  "engines": {
+    "node": ">=0.4.3"
+  },
+  "author": "Douglas Meyer <Douglas.Meyer@mail.com>",
+  "main": "src/test_it.js"
+}

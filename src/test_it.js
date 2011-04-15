@@ -381,10 +381,6 @@
     }
   };
 
-  if (typeof module !== 'undefined'){
-    module.exports = T;
-  } else {
-    window.TestIt = T;
-  }
-
+  if (typeof module !== 'undefined') module.exports = T;
+  if (typeof window !== 'undefined') window.TestIt = T;
 })();
