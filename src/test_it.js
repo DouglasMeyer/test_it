@@ -358,9 +358,16 @@
       var output = '{', first=true;
       var newStack = stack.concat();
       newStack.push(subject);
-      for(var e in subject){
+      
+      var keys = [];
+      for(var key in subject) {
+        keys.push(key);
+      }
+      keys.sort();
+      
+      for(var i=0;i<keys.length;++i){
         if (!first){ output += ','; }
-        output += e+':'+T.inspect(subject[e], newStack);
+        output += keys[i]+':'+T.inspect(subject[keys[i]], newStack);
         first = false;
       }
       return output+'}';
