@@ -1,3 +1,7 @@
+1.2.3 (May 24th, 2011)
+
+* TestIt.isEqual (T.inspect) ignores the order of an object's properties (Thanks LiraNuna).
+
 1.2.2 (Apr 15th, 2011)
 
 * Development clean-up
