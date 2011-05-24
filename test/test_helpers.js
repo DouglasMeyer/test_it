@@ -29,7 +29,8 @@ if (typeof TestIt === 'undefined'){
     {a: [1,2]}, {a: [1,2]}, true,
     [{a:1}], [{a:1}], true,
     recursiveObject, recursiveObject, true,
-    recursiveArray, recursiveArray, true
+    recursiveArray, recursiveArray, true,
+    {a:1, b:2}, {b:2, a:1}, true
   ]));
 })();
 
