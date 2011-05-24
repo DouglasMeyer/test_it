@@ -358,16 +358,16 @@
       var output = '{', first=true;
       var newStack = stack.concat();
       newStack.push(subject);
-      
-      var keys = [];
-      for(var key in subject) {
-        keys.push(key);
+
+      var properties = [];
+      for(var property in subject) {
+        properties.push(property);
       }
-      keys.sort();
-      
-      for(var i=0;i<keys.length;++i){
+      properties.sort();
+
+      for(var i=0,property;property=properties[i];i++){
         if (!first){ output += ','; }
-        output += keys[i]+':'+T.inspect(subject[keys[i]], newStack);
+        output += property+':'+T.inspect(subject[property], newStack);
         first = false;
       }
       return output+'}';
