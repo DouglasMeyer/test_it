@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TestIt</title>
+  <link href="index.css" media="screen" rel="stylesheet" type="text/css" />
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js" type="text/javascript"></script>
+  <script src="http://raw.github.com/DouglasMeyer/test_it/1.2.3/src/test_it.js" type="text/javascript"></script>
+  <script src="codemirror-2.15.js"></script>
+  <link rel="stylesheet" href="codemirror-2.15.css">
+  <script src="codemirror-2.15.mode-js.js"></script>
+  <link rel="stylesheet" href="codemirror-2.15.theme-default.css">
+  <script type="text/javascript" src="index.js"></script>
+</head>
+<body>
+
+<h1>TestIt</h1>
+<em id="tagline"></em>
+
+<p>TestIt makes it easy to test your <em>JavaScript</em>.</p>
+<div id="get-started">
+  Get started with
+  <pre>&lt;script src="http://raw.github.com/DouglasMeyer/test_it/1.2.3/src/test_it.js"&gt;&lt;/script&gt;</pre>
+  or
+  <pre>npm install test_it
+var TestIt = require('test_it');</pre>
+  or try it here:
+</div>
+
+<div class="testing">
+  <textarea>var fixture;
+TestIt('The TestIt Framework', {
+  'it is fast': function(t){
+    t.assert(true, 'It is fast');
+  },
+  'it is easy': function(t){
+    t.assertEqual({ test_it: 'is easy' },
+                  { test_it: 'is easy' });
+  },
+  'it is powerful': function(t){
+    var isPowerful;
+    setTimeout(function(){ isPowerful = true; }, 100);
+    var waitForThis = function(waitTime){
+      return isPowerful || waitTime > 200;
+    };
+    t.waitFor(waitForThis, function(){
+      t.assert(isPowerful, 'It is powerful');
+    });
+  },
+  'lets me test what I want to test, how I want to test': {
+    'in the browser': {
+      'before all':  function(t){ fixture = jQuery('<div />').appendTo(document.body); },
+      'before each': function(t){ fixture.html('').click(function(){ fixture.html('clicked'); }); },
+      'after each':  function(t){ fixture.unbind('click'); },
+      'after all':   function(t){ fixture.remove(); },
+
+      'should be true': function(t){
+        t.assertEqual('', fixture.html());
+        fixture.click();
+        t.assertEqual('clicked', fixture.html());
+      }
+    },
+    'in node.js': {
+      'using require': function(t){
+        // TestIt = require('test_it');
+      }
+    }
+  }
+});</textarea>
+  <button>Run Tests</button>
+  <ul id="test-it-results"></ul>
+</div>
+
+</body>
+</html>

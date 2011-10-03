@@ -1,0 +1,19 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { padding: 10px; }
+p { margin-top: 1em; }
+#get-started pre { background-color: #333; color: white; padding: 1ex; }
+.testing { position: relative; height: 400px; }
+.CodeMirror, ul#test-it-results { position: absolute; top: 0; bottom: 0; border: 1px solid gray; }
+.CodeMirror { left: 0; right: 50%; margin-right: 5px; }
+.CodeMirror .CodeMirror-scroll { height: 100%; }
+ul#test-it-results { left: 50%; right: 0; margin-left: 5px; overflow-y: auto; }
+.testing button { position: absolute; top: 0; right: 50%; margin: 2px 22px; padding: 1px 2px; }
+ul#test-it-results .summary { font-size: 130%; }
+ul#test-it-results { list-style-type: none; margin: 0; padding: 0; }
+ul#test-it-results .summary { margin-bottom: 2px; padding: 4px; border-width: 2px; border-style: solid; }
+ul#test-it-results li { margin: 0; padding: 1px; }
+ul#test-it-results .summary { font-size: 150%; display: block; }
+ul#test-it-results .running { background-color: #AAAAAA; border-color: #727272; display: block; }
+ul#test-it-results .pass  { background-color: #E4FFE4; border-color: #98AA98; }
+ul#test-it-results .fail  { background-color: #FFB0B0; border-color: #AA7676; display: block; }
+ul#test-it-results .error { background-color: #FF4040; border-color: #AA2B2B; display: block; }
