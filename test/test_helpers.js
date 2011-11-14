@@ -70,3 +70,39 @@ if (typeof TestIt === 'undefined'){
     modifiedArray, '[3,4,5]', 'Modified array'
   ]));
 })();
+
+(function(){
+  var differentContextArray;
+  if (typeof require !== 'undefined'){
+    //NOTE: I would like to actually grab an Array from a different JS context,
+    //      but I don't know how to do that in node.js. Essentially, I'm trying
+    //      to satisfy these conditions:
+    //      `differentContextArray.constructor !== Array` and
+    //      `Object.prototype.toString.call(differentContextArray) === '[object Array]'`.
+    var MyArray = function(){
+      var arraylike = Array.apply(this, arguments);
+      arraylike.constructor = MyArray;
+      return arraylike;
+    };
+    differentContextArray = new MyArray();
+  }
+  if (typeof document !== 'undefined'){
+    var iframe = document.createElement('iframe');
+    TestIt.waitFor(function(){ return document.body }, function(){
+      document.body.appendChild(iframe);
+      differentContextArray = new iframe.contentWindow.Array();
+      document.body.removeChild(iframe);
+    });
+  }
+
+  TestIt('TestIt.inspect for array from different JS context', {
+    'before all': function(t){
+      t.waitFor(function(time){
+        return differentContextArray || time > 2000;
+      }, function(){});
+    },
+    'should still look like an array': function(t){
+      t.assertEqual('[]', TestIt.inspect(differentContextArray));
+    }
+  });
+})();
