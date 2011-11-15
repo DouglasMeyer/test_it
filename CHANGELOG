@@ -1,3 +1,7 @@
+1.2.4 (Nov 14th, 2011)
+
+* Fixed edge-case where TestIt.inspect of an array would look like an object (Thanks LiraNuna).
+
 1.2.3 (May 24th, 2011)
 
 * TestIt.isEqual (T.inspect) ignores the order of an object's properties (Thanks LiraNuna).
