@@ -344,7 +344,7 @@
     case 'object':
       if (subject === null) {
         return 'null';
-      } else if (subject.constructor === Array) {
+      } else if (Object.prototype.toString.call(subject) === '[object Array]') {
         var output='[', first=true;
         var newStack = stack.concat();
         newStack.push(subject);
